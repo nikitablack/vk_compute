@@ -4,16 +4,6 @@ project(template LANGUAGES CXX)
 
 include(FetchContent)
 
-option(BUILD_TESTS "Whether or not to build the tests" OFF)
-
-if(BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(third_party/catch SYSTEM)
-endif()
-
-add_subdirectory(third_party/cmakerc SYSTEM)
-add_subdirectory(third_party/fmt SYSTEM)
-
-add_subdirectory(libs/warnings)
-
+add_subdirectory(third_party)
+add_subdirectory(libs)
 add_subdirectory(app)

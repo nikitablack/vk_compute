@@ -1,1 +1,6 @@
-src
+# Ignore everything
+*
+
+# But not these files
+!CMakeLists.txt
+!.gitignore

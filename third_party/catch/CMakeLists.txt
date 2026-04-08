@@ -1,17 +1,23 @@
 cmake_minimum_required(VERSION 3.25)
 
-set(CATCH_VERSION v3.9.0)
-message(STATUS "Downloading Catch2 ${CATCH_VERSION}")
+set(CATCH_VERSION v3.14.0)
+set(CATCH_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/${CATCH_VERSION}")
 
-FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG ${CATCH_VERSION}
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src
-)
+if (EXISTS "${CATCH_SRC_DIR}/CMakeLists.txt")
+    add_subdirectory("${CATCH_SRC_DIR}")
+else()
+    message(STATUS "Downloading fmt ${CATCH_VERSION}")
 
-FetchContent_MakeAvailable(Catch2)
+    FetchContent_Declare(
+        fmt
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG ${CATCH_VERSION}
+        SOURCE_DIR ${CATCH_SRC_DIR}
+    )
 
-list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/extras)
+    FetchContent_MakeAvailable(Catch2)
+endif()
+
+list(APPEND CMAKE_MODULE_PATH ${CATCH_SRC_DIR}/extras)
 include(CTest)
 include(Catch)
