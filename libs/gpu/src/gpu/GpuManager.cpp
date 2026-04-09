@@ -114,57 +114,36 @@ auto GpuManager::flush() const noexcept -> void {
     }
 }
 
-// auto GraphicsManager::allocator() const noexcept -> VmaAllocator {
-//     return m_allocator;
-// }
+auto GpuManager::allocator() const noexcept -> VmaAllocator {
+    return m_allocator;
+}
 
-// auto GraphicsManager::combinedImageSamplerDescriptorSetManager() noexcept ->
-// CombinedImageSamplerDescriptorSetManager& {
-//     return m_cisDescriptorSetManager;
-// }
+auto GpuManager::commandManager() noexcept -> CommandManager& {
+    return m_commandManager;
+}
 
-// auto GraphicsManager::commandManager() noexcept -> CommandManager& {
-//     return m_commandManager;
-// }
+auto GpuManager::computeQueue() const noexcept -> VulkanQueue {
+    return m_computeQueue;
+}
 
 // auto GraphicsManager::debugUtils() const noexcept -> VulkanDebugUtils const& {
 //     return m_debugUtils;
 // }
 
-// auto GraphicsManager::depthFormat() const noexcept -> VkFormat {
-//     return m_depthFormat;
-// }
-
-// auto GraphicsManager::device() const noexcept -> VkDevice {
-//     return m_device;
-// }
-
-// auto GraphicsManager::graphicsQueue() const noexcept -> VulkanQueue {
-//     return m_graphicsQueue;
-// }
+auto GpuManager::device() const noexcept -> VkDevice {
+    return m_device;
+}
 
 // auto GraphicsManager::immediateDataBufferManager() noexcept -> ImmediateDataBufferManager& {
 //     return m_immediateDataBufferManager;
 // }
 
-// auto GraphicsManager::pipelineLayout() const noexcept -> VkPipelineLayout {
-//     return m_pipelineLayout;
-// }
+auto GpuManager::pipelineLayout() const noexcept -> VkPipelineLayout {
+    return m_pipelineLayout;
+}
 
-// auto GraphicsManager::renderTargetFormat() const noexcept -> VkFormat {
-//     return m_renderTargetFormat;
-// }
-
-// auto GraphicsManager::surfaceExtent() const noexcept -> VkExtent2D {
-//     return m_surfaceExtent;
-// }
-
-// auto GraphicsManager::surfaceFormat() const noexcept -> VkFormat {
-//     return m_surfaceFormat.surfaceFormat.format;
-// }
-
-// auto GraphicsManager::storageDescriptorSetManager() noexcept -> StorageDescriptorSetManager& {
-//     return m_storageDescriptorSetManager;
-// }
+auto GpuManager::storageDescriptorSetManager() noexcept -> StorageDescriptorSetManager& {
+    return m_storageDescriptorSetManager;
+}
 
 }  // namespace gpu

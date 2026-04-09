@@ -15,13 +15,8 @@ auto StorageDescriptorSetManager::init(VkDevice device,  //
                                        ) noexcept -> std::expected<void, std::string> {
     m_device = device;
     m_pipelineLayout = pipelineLayout;
-
     m_descriptorSetLayout = descriptorSetLayout;
     m_maxDescriptorCount = requiredDescriptorCount;
-
-    TRY_EXPECTED(DescriptorData descriptorData, createDescriptorData());
-    m_activeDescriptorData.push_back(std::move(descriptorData));
-
     m_currDescriptorDataIndex = 0;
 
     return {};
@@ -70,7 +65,7 @@ auto StorageDescriptorSetManager::push(VkCommandBuffer commandBuffer,  //
         m_activeDescriptorData.push_back(std::move(newDescriptorData));
 
         vkCmdBindDescriptorSets(commandBuffer,  //
-                                VK_PIPELINE_BIND_POINT_GRAPHICS,  //
+                                VK_PIPELINE_BIND_POINT_COMPUTE,  //
                                 m_pipelineLayout,  //
                                 SET_INDEX,  //
                                 1,  //

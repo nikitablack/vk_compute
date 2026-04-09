@@ -1,0 +1,31 @@
+#version 450
+#extension GL_EXT_nonuniform_qualifier : require
+// #extension GL_EXT_debug_printf : enable
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(push_constant) uniform PushConst
+{
+    uint N;
+    uint aDescriptorIndex;
+    uint bDescriptorIndex;
+    uint outDescriptorIndex;
+} pushConstants;
+
+layout (set = 0, binding = 0) buffer DataDescriptors {
+    float data[];
+} dataDescriptors[];
+
+void main() {
+    uint aInd = nonuniformEXT(pushConstants.aDescriptorIndex);
+    uint bInd = nonuniformEXT(pushConstants.bDescriptorIndex);
+    uint outInd = nonuniformEXT(pushConstants.outDescriptorIndex);
+
+    for(uint i = 0; i < pushConstants.N; ++i){
+        float a = dataDescriptors[aInd].data[i];
+        float b = dataDescriptors[bInd].data[i];
+        dataDescriptors[outInd].data[i] = a + b;
+    }
+
+    // debugPrintfEXT("aaa %d %d %d\n", idx, currBatchIndex[0], currBatchIndex[1]);
+}

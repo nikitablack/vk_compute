@@ -23,15 +23,14 @@ public:
     auto destroy() noexcept -> void;
     auto flush() const noexcept -> void;
 
-    // auto allocator() const noexcept -> VmaAllocator;
-    // auto combinedImageSamplerDescriptorSetManager() noexcept -> CombinedImageSamplerDescriptorSetManager&;
-    // auto commandManager() noexcept -> CommandManager&;
+    auto allocator() const noexcept -> VmaAllocator;
+    auto commandManager() noexcept -> CommandManager&;
+    auto computeQueue() const noexcept -> VulkanQueue;
     // auto debugUtils() const noexcept -> VulkanDebugUtils const&;
-    // auto device() const noexcept -> VkDevice;
-    // auto graphicsQueue() const noexcept -> VulkanQueue;
+    auto device() const noexcept -> VkDevice;
     // auto immediateDataBufferManager() noexcept -> ImmediateDataBufferManager&;
-    // auto pipelineLayout() const noexcept -> VkPipelineLayout;
-    // auto storageDescriptorSetManager() noexcept -> StorageDescriptorSetManager&;
+    auto pipelineLayout() const noexcept -> VkPipelineLayout;
+    auto storageDescriptorSetManager() noexcept -> StorageDescriptorSetManager&;
 
 private:
     VkInstance m_instance{VK_NULL_HANDLE};

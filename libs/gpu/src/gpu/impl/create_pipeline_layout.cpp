@@ -12,7 +12,7 @@ auto create_pipeline_layout(VkDevice device,  //
     fmt::println("creating pipeline layout");
 
     VkPushConstantRange pushConstantRange{};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_ALL;
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     pushConstantRange.offset = 0;
     pushConstantRange.size = 256;  // guaranteed by the Spec for Vulkan >= 1.4
 

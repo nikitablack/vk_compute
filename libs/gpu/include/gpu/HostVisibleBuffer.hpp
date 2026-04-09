@@ -26,7 +26,11 @@ public:
                               size_t offset = 0  //
                               ) noexcept -> std::expected<void, std::string>;
 
-    [[nodiscard]] auto copyFrom(void* dst, size_t size, size_t offset) noexcept -> std::expected<void, std::string>;
+    [[nodiscard]] auto copyFrom(void* dst,  //
+                                size_t size,  //
+                                size_t offset = 0  //
+                                ) noexcept -> std::expected<void, std::string>;
+
     auto size() const noexcept -> size_t;
     auto buffer() const noexcept -> VkBuffer;
 

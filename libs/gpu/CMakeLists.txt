@@ -13,7 +13,15 @@ option(VK_ENABLE_VULKAN_DEBUG_UTILS "Enable Vulkan debug utils" ON)
 
 target_sources(gpu
     PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/utils/barrier_helper.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/utils/create_shader_module.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/utils/get_push_constant_data.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/utils/init_helper.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/utils/read_helper.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/utils/submit.hpp
+
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/CommandManager.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/DeviceBuffer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/GpuManager.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/HostVisibleBuffer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/ImmediateDataBufferManager.hpp
@@ -65,7 +73,14 @@ target_sources(gpu
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/RequiredInstanceExtensions.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/RequiredInstanceExtensions.hpp
 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/utils/barrier_helper.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/utils/create_shader_module.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/utils/init_helper.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/utils/read_helper.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/utils/submit.cpp
+
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/CommandManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/DeviceBuffer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/GpuManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/HostVisibleBuffer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/ImmediateDataBufferManager.cpp
@@ -76,9 +91,6 @@ target_sources(gpu
 target_include_directories(gpu PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(gpu PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-set(shaders_lib "shaders_lib")
-cmrc_add_resource_library(${shaders_lib} "")
-
 target_link_libraries(gpu
     PUBLIC
         Vulkan::Vulkan
@@ -87,7 +99,6 @@ target_link_libraries(gpu
         fmt::fmt
         libs::utils
         libs::warnings_as_errors
-        ${shaders_lib}
 )
 
 set_target_properties(gpu
@@ -103,10 +114,3 @@ if(VK_ENABLE_VULKAN_DEBUG_UTILS)
             ENABLE_VULKAN_DEBUG_UTILS
     )
 endif()
-
-# addCompileShadersCommand(TARGET_NAME ${graphics_shaders_lib}
-#     OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders
-#     SHADERS
-#     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/fullscreen_triangle.frag
-#     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/fullscreen_triangle.vert
-# )
