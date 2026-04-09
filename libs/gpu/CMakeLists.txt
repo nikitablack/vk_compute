@@ -13,7 +13,13 @@ option(VK_ENABLE_VULKAN_DEBUG_UTILS "Enable Vulkan debug utils" ON)
 
 target_sources(gpu
     PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/CommandManager.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/GpuManager.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/HostVisibleBuffer.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/ImmediateDataBufferManager.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/StorageDescriptorSetManager.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/VulkanDebugUtils.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/VulkanFunctions.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/VulkanQueue.hpp
 
     PRIVATE
@@ -25,18 +31,32 @@ target_sources(gpu
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/features/Vulkan13Features.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/features/Vulkan13Features.hpp
 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/allocate_descriptor_set.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/allocate_descriptor_set.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/check_instance_version.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/check_instance_version.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/check_physical_device_support.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/check_physical_device_support.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/check_required_instance_extensions.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/check_required_instance_extensions.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_allocator.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_allocator.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_descriptor_pool.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_descriptor_pool.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_descriptor_set_layout.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_descriptor_set_layout.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_device.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_device.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_instance.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_instance.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_pipeline_layout.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/create_pipeline_layout.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/get_compute_queue_family.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/get_compute_queue_family.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/get_physical_device_properties.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/get_physical_device_properties.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/get_queue.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/get_queue.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/get_supported_physical_devices.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/get_supported_physical_devices.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/RequiredApiVersion.hpp
@@ -45,7 +65,12 @@ target_sources(gpu
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/RequiredInstanceExtensions.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/RequiredInstanceExtensions.hpp
 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/CommandManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/GpuManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/HostVisibleBuffer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/ImmediateDataBufferManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/StorageDescriptorSetManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/VulkanFunctions.cpp
 )
 
 target_include_directories(gpu PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

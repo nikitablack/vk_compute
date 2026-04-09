@@ -4,12 +4,10 @@
 #include <vulkan/vulkan.h>
 
 #include <expected>
-// #include <gpu/CommandManager.hpp>
-// #include <gpu/DescriptorSetManager.hpp>
-// #include <gpu/DeviceImage2d.hpp>
-// #include <gpu/FrameData.hpp>
-// #include <gpu/ImmediateDataBufferManager.hpp>
-// #include <gpu/VulkanDebugUtils.hpp>
+#include <gpu/CommandManager.hpp>
+#include <gpu/ImmediateDataBufferManager.hpp>
+#include <gpu/StorageDescriptorSetManager.hpp>
+#include <gpu/VulkanDebugUtils.hpp>
 #include <gpu/VulkanQueue.hpp>
 #include <string>
 #include <vector>
@@ -40,17 +38,14 @@ private:
     VkPhysicalDevice m_physicalDevice{VK_NULL_HANDLE};
     VkPhysicalDeviceProperties2 m_physicalDeviceProperties{};
     VkDevice m_device{VK_NULL_HANDLE};
-    // VulkanDebugUtils m_debugUtils{};
+    VulkanDebugUtils m_debugUtils{};
     VulkanQueue m_computeQueue{};
-    // VmaAllocator m_allocator{VK_NULL_HANDLE};
-    // CommandManager m_commandManager{};
-    // VkDescriptorSetLayout m_storageDescriptorSetLayout{VK_NULL_HANDLE};
-    // VkDescriptorSetLayout m_cisDescriptorSetLayout{VK_NULL_HANDLE};
-    // VkPipelineLayout m_pipelineLayout{VK_NULL_HANDLE};
-    // StorageDescriptorSetManager m_storageDescriptorSetManager{};
-    // CombinedImageSamplerDescriptorSetManager m_cisDescriptorSetManager{};
-    // ImmediateDataBufferManager m_immediateDataBufferManager{};
-    // VkPipeline m_fullscreenTrianglePipeline{VK_NULL_HANDLE};
+    VmaAllocator m_allocator{VK_NULL_HANDLE};
+    CommandManager m_commandManager{};
+    VkDescriptorSetLayout m_storageDescriptorSetLayout{VK_NULL_HANDLE};
+    VkPipelineLayout m_pipelineLayout{VK_NULL_HANDLE};
+    StorageDescriptorSetManager m_storageDescriptorSetManager{};
+    ImmediateDataBufferManager m_immediateDataBufferManager{};
 };
 
 }  // namespace gpu

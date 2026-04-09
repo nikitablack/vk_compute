@@ -12,8 +12,8 @@ auto main_impl() -> std::expected<void, std::string> {
     gpu::GpuManager gpuManager{};
     TRY_EXPECTED_VOID(gpuManager.initialize());
 
-    // gpuManager.flush();
-    // gpuManager.destroy();
+    gpuManager.flush();
+    gpuManager.destroy();
 
     return {};
 }
