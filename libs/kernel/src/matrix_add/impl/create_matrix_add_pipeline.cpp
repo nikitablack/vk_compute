@@ -5,14 +5,14 @@
 #include <utils/try_expected.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
-CMRC_DECLARE(matrix_add_shaders);
+CMRC_DECLARE(kernel_shaders);
 
 namespace matrix_add::impl {
 
 auto create_matrix_add_pipeline(VkDevice device,  //
                                 VkPipelineLayout pipelineLayout  //
                                 ) noexcept -> std::expected<VkPipeline, std::string> {
-    auto const fs{cmrc::matrix_add_shaders::get_filesystem()};
+    auto const fs{cmrc::kernel_shaders::get_filesystem()};
     auto const shader{fs.open("matrix_add.comp.spv")};
 
     TRY_EXPECTED(auto const shaderModule,

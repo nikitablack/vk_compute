@@ -24,7 +24,7 @@ set_target_properties(app
 target_link_libraries(app
     PRIVATE
         libs::gpu
-        libs::matrix_add
+        libs::kernel
         libs::utils
         libs::warnings_as_errors
         fmt::fmt
