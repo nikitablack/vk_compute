@@ -6,10 +6,10 @@ set(CATCH_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/${CATCH_VERSION}")
 if (EXISTS "${CATCH_SRC_DIR}/CMakeLists.txt")
     add_subdirectory("${CATCH_SRC_DIR}")
 else()
-    message(STATUS "Downloading fmt ${CATCH_VERSION}")
+    message(STATUS "Downloading Catch2 ${CATCH_VERSION}")
 
     FetchContent_Declare(
-        fmt
+        Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
         GIT_TAG ${CATCH_VERSION}
         SOURCE_DIR ${CATCH_SRC_DIR}

@@ -27,7 +27,7 @@ public:
     [[nodiscard]] auto run(gpu::GpuManager& gpuManager,  //
                            std::span<float const> a,  //
                            std::span<float const> b,  //
-                           std::vector<float>& out  //
+                           std::span<float> result  //
                            ) noexcept -> std::expected<void, std::string>;
 
 private:

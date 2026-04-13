@@ -34,10 +34,15 @@ auto Add::destroy() noexcept -> void {
 auto Add::run(gpu::GpuManager& gpuManager,  //
               std::span<float const> a,  //
               std::span<float const> b,  //
-              std::vector<float>& out  //
+              std::span<float> result  //
               ) noexcept -> std::expected<void, std::string> {
-    if (a.size() != b.size()) {
+    if ((a.size() != b.size()) || (a.size() != result.size())) {
         return std::unexpected("input buffers size mismatch");
+    }
+
+    // special case
+    if (a.size() == 0) {
+        return {};
     }
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
@@ -130,11 +135,7 @@ auto Add::run(gpu::GpuManager& gpuManager,  //
 
         TRY_EXPECTED_VOID(gpu::utils::read_data_sync(gpuManager, m_bufferOut, m_stagingBuffer, dataSize));
 
-        if ((out.size() * sizeof(float)) < dataSize) {
-            out.resize(dataSize / sizeof(float));
-        }
-
-        TRY_EXPECTED_VOID(m_stagingBuffer.copyFrom(out.data(), dataSize, 0));
+        TRY_EXPECTED_VOID(m_stagingBuffer.copyFrom(result.data(), dataSize, 0));
     }
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
