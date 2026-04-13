@@ -15,7 +15,7 @@ class GpuManager;
 
 }
 
-namespace matrix_add {
+namespace kernel {
 
 class MatrixAdd {
 public:
@@ -48,4 +48,4 @@ private:
     VkPipeline m_pipeline{VK_NULL_HANDLE};
 };
 
-}  // namespace matrix_add
+}  // namespace kernel

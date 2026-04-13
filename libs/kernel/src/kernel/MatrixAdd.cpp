@@ -1,14 +1,11 @@
-#include <fmt/core.h>
-
-#include <chrono>
-#include <functional>
 #include <gpu/GpuManager.hpp>
 #include <gpu/utils/get_push_constant_data.hpp>
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
 #include <gpu/utils/submit.hpp>
-#include <matrix_add/MatrixAdd.hpp>
-#include <matrix_add/impl/create_matrix_add_pipeline.hpp>
+#include <kernel/MatrixAdd.hpp>
+#include <kernel/utils/benchmark_with_percentiles.hpp>
+#include <kernel/utils/create_pipeline.hpp>
 #include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
 
@@ -20,52 +17,7 @@
 #endif
 #endif
 
-namespace {
-
-template <uint32_t RUNS = 10, uint32_t PERCENTILE_COUNT = 10>
-[[nodiscard]] auto benchmark_with_percentiles(std::function<std::expected<void, std::string>()> const& fn)
-    -> std::expected<void, std::string> {
-    static_assert(RUNS > 0, "incorrect number of runs");
-    static_assert(PERCENTILE_COUNT > 0, "incorrect number of percentiles");
-
-    using Clock = std::chrono::high_resolution_clock;
-    using Duration = std::chrono::duration<double, std::micro>;
-
-    std::array<double, RUNS> samples{};
-
-    // Run benchmark
-    for (size_t i{0}; i < samples.size(); ++i) {
-        auto const start{Clock::now()};
-        TRY_EXPECTED_VOID(fn());
-        auto const end{Clock::now()};
-
-        samples[i] = std::chrono::duration_cast<Duration>(end - start).count();
-    }
-
-    // Sort samples
-    std::sort(samples.begin(), samples.end());
-
-    // Print results
-    fmt::println("runs: {}", RUNS);
-
-    for (size_t i{1}; i <= PERCENTILE_COUNT; ++i) {
-        double const p{(100.0 * static_cast<double>(i)) / static_cast<double>(PERCENTILE_COUNT)};
-        auto const index{static_cast<size_t>((p / 100.0) * static_cast<double>(RUNS - size_t{1}))};
-        double const value{samples[index]};
-
-        fmt::print("p{:5.1f}: {:.2f} us\n", p, value);
-    }
-
-    // Optional: min / max
-    fmt::println("min: {:.2f} us", samples.front());
-    fmt::println("max: {:.2f} us", samples.back());
-
-    return {};
-}
-
-}  // namespace
-
-namespace matrix_add {
+namespace kernel {
 
 auto MatrixAdd::destroy() noexcept -> void {
     if (!m_device) {
@@ -107,11 +59,12 @@ auto MatrixAdd::run(gpu::GpuManager& gpuManager,  //
 
     if (!m_device) {
         m_device = gpuManager.device();
-        TRY_EXPECTED(m_pipeline, impl::create_matrix_add_pipeline(m_device,  //
-                                                                  gpuManager.pipelineLayout(),  //
-                                                                  WORKGROUP_SIZE_X,  //
-                                                                  WORKGROUP_SIZE_Y,  //
-                                                                  WORKGROUP_SIZE_Z));
+        TRY_EXPECTED(m_pipeline, utils::create_pipeline(m_device,  //
+                                                        gpuManager.pipelineLayout(),  //
+                                                        "matrix_add",  //
+                                                        WORKGROUP_SIZE_X,  //
+                                                        WORKGROUP_SIZE_Y,  //
+                                                        WORKGROUP_SIZE_Z));
     }
 
     uint32_t const dataSize{static_cast<uint32_t>(a.size_bytes())};
@@ -147,16 +100,16 @@ auto MatrixAdd::run(gpu::GpuManager& gpuManager,  //
     {
         TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(gpuManager,  //
                                                        m_bufferA,  //
-                                                       utils::to_byte_span(a)));
+                                                       ::utils::to_byte_span(a)));
 
         TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(gpuManager,  //
                                                        m_bufferB,  //
-                                                       utils::to_byte_span(b)));
+                                                       ::utils::to_byte_span(b)));
     }
 
     // run compute
 
-    TRY_EXPECTED_VOID(benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
+    TRY_EXPECTED_VOID(utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
         TRY_EXPECTED_VOID(runImpl(gpuManager, static_cast<uint32_t>(a.size()),  //
                                   dataSize,  //
                                   WORKGROUP_SIZE_X,  //
@@ -261,4 +214,4 @@ auto MatrixAdd::runImpl(gpu::GpuManager& gpuManager,  //
     return {};
 }
 
-}  // namespace matrix_add
+}  // namespace kernel

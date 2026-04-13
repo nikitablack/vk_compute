@@ -1,21 +1,22 @@
 #include <cmrc/cmrc.hpp>
 #include <gpu/utils/create_shader_module.hpp>
 #include <gpu/utils/get_push_constant_data.hpp>
-#include <matrix_add/impl/create_matrix_add_pipeline.hpp>
+#include <kernel/utils/create_pipeline.hpp>
 #include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 CMRC_DECLARE(kernel_shaders);
 
-namespace matrix_add::impl {
+namespace kernel::utils {
 
-auto create_matrix_add_pipeline(VkDevice device,  //
-                                VkPipelineLayout pipelineLayout,  //
-                                uint32_t workgroupSizeX,  //
-                                uint32_t workgroupSizeY,  //
-                                uint32_t workgroupSizeZ  //
-                                ) noexcept -> std::expected<VkPipeline, std::string> {
+auto create_pipeline(VkDevice device,  //
+                     VkPipelineLayout pipelineLayout,  //
+                     std::string const& shaderName,
+                     uint32_t workgroupSizeX,  //
+                     uint32_t workgroupSizeY,  //
+                     uint32_t workgroupSizeZ  //
+                     ) noexcept -> std::expected<VkPipeline, std::string> {
     std::array<VkSpecializationMapEntry, 3> cpecEntries{};
     cpecEntries[0].constantID = 0;
     cpecEntries[0].offset = 0;
@@ -36,10 +37,10 @@ auto create_matrix_add_pipeline(VkDevice device,  //
     specInfo.pData = specData.data();
 
     auto const fs{cmrc::kernel_shaders::get_filesystem()};
-    auto const shader{fs.open("matrix_add.comp.spv")};
+    auto const shader{fs.open(shaderName + ".comp.spv")};
 
     TRY_EXPECTED(auto const shaderModule,
-                 gpu::utils::create_shader_module(device, utils::to_byte_span(shader.cbegin(), shader.size())));
+                 gpu::utils::create_shader_module(device, ::utils::to_byte_span(shader.cbegin(), shader.size())));
 
     VkPipelineShaderStageCreateInfo shaderStageInfo = vku::InitStructHelper{};
     shaderStageInfo.flags = 0;
@@ -65,4 +66,4 @@ auto create_matrix_add_pipeline(VkDevice device,  //
     return pipeline;
 }
 
-}  // namespace matrix_add::impl
+}  // namespace kernel::utils

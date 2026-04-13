@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <expected>
 #include <gpu/GpuManager.hpp>
-#include <matrix_add/MatrixAdd.hpp>
+#include <kernel/MatrixAdd.hpp>
 #include <ranges>
 #include <string>
 #include <utils/try_expected.hpp>
@@ -30,7 +30,7 @@ auto main_impl() -> std::expected<void, std::string> {
         std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
         b.begin());
 
-    matrix_add::MatrixAdd matrixAdd{};
+    kernel::MatrixAdd matrixAdd{};
 
     TRY_EXPECTED_VOID(matrixAdd.run(gpuManager, a, b, result));
 

@@ -16,7 +16,7 @@ layout(push_constant) uniform PushConst
 } pushConstants;
 
 layout (set = 0, binding = 0) buffer DataDescriptors {
-    float data[];
+    vec4 data[];
 } dataDescriptors[];
 
 void main() {
@@ -24,18 +24,17 @@ void main() {
     uint gridWidth = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
     uint index = gid.y * gridWidth + gid.x;
 
-    if(index >= pushConstants.N){
+    uint vecCount = pushConstants.N / 4;
+
+    if (index >= vecCount) {
         return;
     }
 
-    uint aInd = nonuniformEXT(pushConstants.aDescriptorIndex);
-    uint bInd = nonuniformEXT(pushConstants.bDescriptorIndex);
+    uint aInd  = nonuniformEXT(pushConstants.aDescriptorIndex);
+    uint bInd  = nonuniformEXT(pushConstants.bDescriptorIndex);
     uint outInd = nonuniformEXT(pushConstants.outDescriptorIndex);
 
-    float a = dataDescriptors[aInd].data[index];
-    float b = dataDescriptors[bInd].data[index];
-    float result = a + b;
-    dataDescriptors[outInd].data[index] = result;
-
-    // debugPrintfEXT("%d\n", gl_LocalInvocationID.x);
+    vec4 a = dataDescriptors[aInd].data[index];
+    vec4 b = dataDescriptors[bInd].data[index];
+    dataDescriptors[outInd].data[index] = a + b;
 }
