@@ -18,6 +18,7 @@ auto StorageDescriptorSetManager::init(VkDevice device,  //
     m_descriptorSetLayout = descriptorSetLayout;
     m_maxDescriptorCount = requiredDescriptorCount;
     m_currDescriptorDataIndex = 0;
+    m_currBoundCommandBuffer = VK_NULL_HANDLE;
 
     return {};
 }
@@ -38,6 +39,7 @@ auto StorageDescriptorSetManager::destroy() noexcept -> void {
     m_descriptorSetLayout = VK_NULL_HANDLE;
     m_maxDescriptorCount = 0;
     m_currDescriptorDataIndex = 0;
+    m_currBoundCommandBuffer = VK_NULL_HANDLE;
 }
 
 auto StorageDescriptorSetManager::push(VkCommandBuffer commandBuffer,  //
@@ -50,31 +52,33 @@ auto StorageDescriptorSetManager::push(VkCommandBuffer commandBuffer,  //
     // check if there is enough space in the current descriptor set
     // if not, move to the next, creating a new one if necessary
     if (m_currDescriptorDataIndex < m_activeDescriptorData.size()) {
-        auto& dd{m_activeDescriptorData[m_currDescriptorDataIndex]};
+        auto const& dd{m_activeDescriptorData[m_currDescriptorDataIndex]};
 
-        if ((++dd.descriptorCounter) >= m_maxDescriptorCount) {
+        if ((dd.descriptorCounter + 1) >= m_maxDescriptorCount) {
             ++m_currDescriptorDataIndex;
         }
     }
 
     // create new descriptor set if necessary
     if (m_currDescriptorDataIndex >= m_activeDescriptorData.size()) {
-        fmt::println("binding descriptor set {}", m_currDescriptorDataIndex);
-
         TRY_EXPECTED(DescriptorData newDescriptorData, createDescriptorData());
         m_activeDescriptorData.push_back(std::move(newDescriptorData));
+    }
 
+    auto& descriptorData{m_activeDescriptorData[m_currDescriptorDataIndex]};
+
+    if (commandBuffer != m_currBoundCommandBuffer) {
         vkCmdBindDescriptorSets(commandBuffer,  //
                                 VK_PIPELINE_BIND_POINT_COMPUTE,  //
                                 m_pipelineLayout,  //
                                 SET_INDEX,  //
                                 1,  //
-                                &newDescriptorData.descriptorSet,  //
+                                &descriptorData.descriptorSet,  //
                                 0,  //
                                 nullptr);
-    }
 
-    auto& descriptorData{m_activeDescriptorData[m_currDescriptorDataIndex]};
+        m_currBoundCommandBuffer = commandBuffer;
+    }
 
     VkWriteDescriptorSet writeDescriptorSet = vku::InitStructHelper{};
     writeDescriptorSet.dstSet = descriptorData.descriptorSet;
@@ -92,6 +96,15 @@ auto StorageDescriptorSetManager::push(VkCommandBuffer commandBuffer,  //
     ++descriptorData.descriptorCounter;
 
     return descriptorIndex;
+}
+
+auto StorageDescriptorSetManager::reset() noexcept -> void {
+    m_currDescriptorDataIndex = 0;
+    m_currBoundCommandBuffer = VK_NULL_HANDLE;
+
+    for (auto& dd : m_activeDescriptorData) {
+        dd.descriptorCounter = 0;
+    }
 }
 
 auto StorageDescriptorSetManager::createDescriptorData() noexcept -> std::expected<DescriptorData, std::string> {

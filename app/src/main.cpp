@@ -1,9 +1,12 @@
 #include <fmt/core.h>
+#include <fmt/ranges.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <expected>
 #include <gpu/GpuManager.hpp>
 #include <matrix_add/MatrixAdd.hpp>
+#include <ranges>
 #include <string>
 #include <utils/try_expected.hpp>
 
@@ -13,13 +16,25 @@ auto main_impl() -> std::expected<void, std::string> {
     gpu::GpuManager gpuManager{};
     TRY_EXPECTED_VOID(gpuManager.initialize());
 
-    std::vector<float> a{1.0f, 2.0f, 3.0f};
-    std::vector<float> b{4.0f, 5.0f, 6.0f};
-    std::vector<float> result{};
+    uint32_t constexpr N{1024 * 1024 * 100};
+
+    std::vector<float> a(N);
+    std::vector<float> b(N);
+    std::vector<float> result(N);
+
+    std::ranges::copy(
+        std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
+        a.begin());
+
+    std::ranges::copy(
+        std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
+        b.begin());
 
     matrix_add::MatrixAdd matrixAdd{};
+
     TRY_EXPECTED_VOID(matrixAdd.run(gpuManager, a, b, result));
-    fmt::println("{} {} {}", result[0], result[1], result[2]);
+
+    // fmt::print("[{}]\n", fmt::join(result | std::views::take(10), ", "));
 
     gpuManager.flush();
     matrixAdd.destroy();

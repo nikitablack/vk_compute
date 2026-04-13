@@ -3,6 +3,7 @@
 #include <gpu/impl/features/RequiredFeatures.hpp>
 #include <gpu/impl/features/Vulkan12Features.hpp>
 #include <gpu/impl/features/Vulkan13Features.hpp>
+#include <gpu/impl/features/Vulkan14Features.hpp>
 #include <unordered_map>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -27,6 +28,7 @@ RequiredFeatures::RequiredFeatures() noexcept {
 
     addFeature<Vulkan12Features>();
     addFeature<Vulkan13Features>();
+    addFeature<Vulkan14Features>();
 }
 
 auto RequiredFeatures::printImpl() const noexcept -> void {

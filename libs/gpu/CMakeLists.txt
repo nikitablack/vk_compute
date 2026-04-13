@@ -11,6 +11,13 @@ add_library(libs::gpu
 
 option(VK_ENABLE_VULKAN_DEBUG_UTILS "Enable Vulkan debug utils" ON)
 
+if(VK_ENABLE_VULKAN_DEBUG_UTILS)
+    target_compile_definitions(gpu
+        PRIVATE
+            ENABLE_VULKAN_DEBUG_UTILS
+    )
+endif()
+
 target_sources(gpu
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/utils/barrier_helper.hpp
@@ -38,6 +45,8 @@ target_sources(gpu
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/features/Vulkan12Features.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/features/Vulkan13Features.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/features/Vulkan13Features.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/features/Vulkan14Features.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/features/Vulkan14Features.hpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/allocate_descriptor_set.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/impl/allocate_descriptor_set.hpp
@@ -107,10 +116,3 @@ set_target_properties(gpu
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
 )
-
-if(VK_ENABLE_VULKAN_DEBUG_UTILS)
-    target_compile_definitions(gpu
-        PRIVATE
-            ENABLE_VULKAN_DEBUG_UTILS
-    )
-endif()

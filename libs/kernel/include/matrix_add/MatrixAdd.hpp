@@ -31,6 +31,15 @@ public:
                            ) noexcept -> std::expected<void, std::string>;
 
 private:
+    [[nodiscard]] auto runImpl(gpu::GpuManager& gpuManager,  //
+                               uint32_t dataCount,  //
+                               uint32_t dataSizeBytes,  //
+                               uint32_t workgroupSizeX,  //
+                               uint32_t workgroupSizeY,  //
+                               uint32_t workgroupSizeZ  //
+                               ) -> std::expected<void, std::string>;
+
+private:
     VkDevice m_device{VK_NULL_HANDLE};
     gpu::DeviceBuffer m_bufferA{};
     gpu::DeviceBuffer m_bufferB{};

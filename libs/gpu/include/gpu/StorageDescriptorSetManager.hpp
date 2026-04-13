@@ -45,6 +45,8 @@ public:
                             VkDescriptorBufferInfo const& bufferInfo  //
                             ) noexcept -> std::expected<uint32_t, std::string>;
 
+    auto reset() noexcept -> void;
+
 private:
     [[nodiscard]] auto createDescriptorData() noexcept -> std::expected<DescriptorData, std::string>;
 
@@ -58,6 +60,7 @@ private:
     uint32_t m_maxDescriptorCount{0};
     std::vector<DescriptorData> m_activeDescriptorData{};
     uint32_t m_currDescriptorDataIndex{0};
+    VkCommandBuffer m_currBoundCommandBuffer{VK_NULL_HANDLE};
 };
 
 }  // namespace gpu

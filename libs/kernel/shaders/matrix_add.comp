@@ -2,7 +2,10 @@
 #extension GL_EXT_nonuniform_qualifier : require
 // #extension GL_EXT_debug_printf : enable
 
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+// specialization constants
+layout(local_size_x_id = 0,
+       local_size_y_id = 1,
+       local_size_z_id = 2) in;
 
 layout(push_constant) uniform PushConst
 {
@@ -17,15 +20,21 @@ layout (set = 0, binding = 0) buffer DataDescriptors {
 } dataDescriptors[];
 
 void main() {
+    uvec2 gid = gl_GlobalInvocationID.xy;
+    uint gridWidth = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+    uint index = gid.y * gridWidth + gid.x;
+
+    if(index >= pushConstants.N){
+        return;
+    }
+
     uint aInd = nonuniformEXT(pushConstants.aDescriptorIndex);
     uint bInd = nonuniformEXT(pushConstants.bDescriptorIndex);
     uint outInd = nonuniformEXT(pushConstants.outDescriptorIndex);
 
-    for(uint i = 0; i < pushConstants.N; ++i){
-        float a = dataDescriptors[aInd].data[i];
-        float b = dataDescriptors[bInd].data[i];
-        dataDescriptors[outInd].data[i] = a + b;
-    }
+    float a = dataDescriptors[aInd].data[index];
+    float b = dataDescriptors[bInd].data[index];
+    dataDescriptors[outInd].data[index] = a + b;
 
-    // debugPrintfEXT("aaa %d %d %d\n", idx, currBatchIndex[0], currBatchIndex[1]);
+    // debugPrintfEXT("%d\n", gl_LocalInvocationID.x);
 }
