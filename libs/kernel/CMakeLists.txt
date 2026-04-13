@@ -22,12 +22,12 @@ target_sources(kernel
         ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/utils/benchmark_with_percentiles.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/utils/create_pipeline.hpp
 
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/MatrixAdd.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/Add.hpp
 
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/utils/create_pipeline.cpp
 
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/MatrixAdd.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/Add.cpp
 )
 
 target_include_directories(kernel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -58,6 +58,6 @@ set_target_properties(kernel
 addCompileShadersCommand(TARGET_NAME ${kernel_shaders}
     OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders
     SHADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/matrix_add.comp
-    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/matrix_add_v.comp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/add.comp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/add_v.comp
 )

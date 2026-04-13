@@ -3,7 +3,7 @@
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
 #include <gpu/utils/submit.hpp>
-#include <kernel/MatrixAdd.hpp>
+#include <kernel/Add.hpp>
 #include <kernel/utils/benchmark_with_percentiles.hpp>
 #include <kernel/utils/create_pipeline.hpp>
 #include <utils/to_span.hpp>
@@ -19,7 +19,7 @@
 
 namespace kernel {
 
-auto MatrixAdd::destroy() noexcept -> void {
+auto Add::destroy() noexcept -> void {
     if (!m_device) {
         return;
     }
@@ -31,11 +31,11 @@ auto MatrixAdd::destroy() noexcept -> void {
     m_stagingBuffer.destroy();
 }
 
-auto MatrixAdd::run(gpu::GpuManager& gpuManager,  //
-                    std::span<float const> a,  //
-                    std::span<float const> b,  //
-                    std::vector<float>& out  //
-                    ) noexcept -> std::expected<void, std::string> {
+auto Add::run(gpu::GpuManager& gpuManager,  //
+              std::span<float const> a,  //
+              std::span<float const> b,  //
+              std::vector<float>& out  //
+              ) noexcept -> std::expected<void, std::string> {
     if (a.size() != b.size()) {
         return std::unexpected("input buffers size mismatch");
     }
@@ -61,7 +61,7 @@ auto MatrixAdd::run(gpu::GpuManager& gpuManager,  //
         m_device = gpuManager.device();
         TRY_EXPECTED(m_pipeline, utils::create_pipeline(m_device,  //
                                                         gpuManager.pipelineLayout(),  //
-                                                        "matrix_add",  //
+                                                        "add",  //
                                                         WORKGROUP_SIZE_X,  //
                                                         WORKGROUP_SIZE_Y,  //
                                                         WORKGROUP_SIZE_Z));
@@ -146,13 +146,13 @@ auto MatrixAdd::run(gpu::GpuManager& gpuManager,  //
     return {};
 }
 
-auto MatrixAdd::runImpl(gpu::GpuManager& gpuManager,  //
-                        uint32_t dataCount,
-                        uint32_t dataSizeBytes,  //
-                        uint32_t workgroupSizeX,  //
-                        uint32_t workgroupSizeY,  //
-                        uint32_t workgroupSizeZ  //
-                        ) -> std::expected<void, std::string> {
+auto Add::runImpl(gpu::GpuManager& gpuManager,  //
+                  uint32_t dataCount,
+                  uint32_t dataSizeBytes,  //
+                  uint32_t workgroupSizeX,  //
+                  uint32_t workgroupSizeY,  //
+                  uint32_t workgroupSizeZ  //
+                  ) -> std::expected<void, std::string> {
     uint32_t const workgroupSize{workgroupSizeX * workgroupSizeY * workgroupSizeZ};
 
     TRY_EXPECTED(auto const commandBuffer, gpuManager.commandManager().commandBufferBegin());
@@ -177,7 +177,7 @@ auto MatrixAdd::runImpl(gpu::GpuManager& gpuManager,  //
         TRY_EXPECTED(uint32_t const descriptorIndexOut,
                      gpuManager.storageDescriptorSetManager().push(commandBuffer, bufferInfo));
 
-        // see matrix_add.cpmp
+        // see add.cpmp
         auto const pushConstData{gpu::utils::get_push_constant_data(dataCount,  //
                                                                     descriptorIndexA,  //
                                                                     descriptorIndexB,  //

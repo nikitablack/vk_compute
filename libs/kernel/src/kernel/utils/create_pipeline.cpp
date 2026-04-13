@@ -58,7 +58,7 @@ auto create_pipeline(VkDevice device,  //
 
     VkPipeline pipeline{VK_NULL_HANDLE};
     if (vkCreateComputePipelines(device, nullptr, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
-        return std::unexpected{"failed to create matrix add pipeline"};
+        return std::unexpected{"failed to create pipeline"};
     }
 
     vkDestroyShaderModule(device, shaderModule, nullptr);

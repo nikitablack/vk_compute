@@ -17,9 +17,9 @@ class GpuManager;
 
 namespace kernel {
 
-class MatrixAdd {
+class Add {
 public:
-    MatrixAdd() = default;
+    Add() = default;
 
 public:
     auto destroy() noexcept -> void;
