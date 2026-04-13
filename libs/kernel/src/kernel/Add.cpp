@@ -48,7 +48,7 @@ auto Add::run(gpu::GpuManager& gpuManager,  //
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
     RENDERDOC_API_1_7_0* renderdocApi{nullptr};
 
-    if (void* mod{dlopen("/home/nc/Downloads/renderdoc_1.43/lib/librenderdoc.so", RTLD_NOW | RTLD_NOLOAD)}) {
+    if (void* mod{dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD)}) {
         auto const getAPI{reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"))};
         [[maybe_unused]] int ret{getAPI(eRENDERDOC_API_Version_1_7_0, reinterpret_cast<void**>(&renderdocApi))};
     }
