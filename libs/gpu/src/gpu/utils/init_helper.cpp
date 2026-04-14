@@ -61,7 +61,7 @@ auto init_buffer_sync(GpuManager& gpuManager,  //
                       std::span<std::byte const> data  //
                       ) noexcept -> std::expected<void, std::string> {
     HostVisibleBuffer stagingBuffer{};
-    TRY_EXPECTED_VOID(stagingBuffer.init(gpuManager.allocator(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, data.size()));
+    TRY_EXPECTED_VOID(stagingBuffer.init(gpuManager.allocator(), data.size()));
     TRY_EXPECTED_VOID(stagingBuffer.copyTo(data));
 
     TRY_EXPECTED(auto const commandBuffer, gpuManager.commandManager().commandBufferBegin());

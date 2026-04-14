@@ -4,9 +4,9 @@
 namespace gpu {
 
 auto HostVisibleBuffer::init(VmaAllocator allocator,  //
-                             VkBufferUsageFlags usageFlags,  //
                              size_t size,  //
-                             bool readback  //
+                             bool readback,  //
+                             VkBufferUsageFlags usageFlags  //
                              ) noexcept -> std::expected<void, std::string> {
     m_allocator = allocator;
     m_size = size;

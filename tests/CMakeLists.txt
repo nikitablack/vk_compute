@@ -13,7 +13,7 @@ set_target_properties(tests
 
 target_sources(tests
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/add.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/test_add.cpp
 )
 
 target_link_libraries(tests

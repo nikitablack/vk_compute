@@ -4,8 +4,8 @@
 namespace gpu {
 
 auto DeviceBuffer::init(VmaAllocator allocator,  //
-                        VkBufferUsageFlags2 usageFlags,  //
-                        size_t size  //
+                        size_t size,  //
+                        VkBufferUsageFlags2 usageFlags  //
                         ) noexcept -> std::expected<void, std::string> {
     m_allocator = allocator;
     m_size = size;

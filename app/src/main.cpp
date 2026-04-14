@@ -4,11 +4,25 @@
 #include <algorithm>
 #include <cstdlib>
 #include <expected>
+#include <gpu/DeviceBuffer.hpp>
 #include <gpu/GpuManager.hpp>
+#include <gpu/HostVisibleBuffer.hpp>
+#include <gpu/utils/init_helper.hpp>
+#include <gpu/utils/read_helper.hpp>
 #include <kernel/Add.hpp>
+#include <kernel/utils/benchmark_with_percentiles.hpp>
 #include <ranges>
 #include <string>
+#include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
+
+#ifdef VK_ENABLE_RENDERDOC_DEBUG
+#include <renderdoc_app.h>
+
+#ifdef __linux
+#include <dlfcn.h>
+#endif
+#endif
 
 namespace {
 
@@ -17,27 +31,87 @@ auto main_impl() -> std::expected<void, std::string> {
     TRY_EXPECTED_VOID(gpuManager.initialize());
 
     uint32_t constexpr N{1024 * 1024 * 100};
+    uint32_t constexpr S{N * sizeof(float)};
 
-    std::vector<float> a(N);
-    std::vector<float> b(N);
-    std::vector<float> result(N);
+    // initialize host memory
+    std::vector<float> aHost(N);
+    std::vector<float> bHost(N);
 
-    std::ranges::copy(
-        std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
-        a.begin());
+    // initizlize host data
+    {
+        std::ranges::copy(
+            std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
+            aHost.begin());
 
-    std::ranges::copy(
-        std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
-        b.begin());
+        std::ranges::copy(
+            std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
+            bHost.begin());
+    }
 
-    kernel::Add add{};
+#ifdef VK_ENABLE_RENDERDOC_DEBUG
+    RENDERDOC_API_1_7_0* renderdocApi{nullptr};
 
-    TRY_EXPECTED_VOID(add.run(gpuManager, a, b, result));
+    if (void* mod{dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD)}) {
+        auto const getAPI{reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"))};
+        [[maybe_unused]] int ret{getAPI(eRENDERDOC_API_Version_1_7_0, reinterpret_cast<void**>(&renderdocApi))};
+    }
 
-    // fmt::print("[{}]\n", fmt::join(result | std::views::take(10), ", "));
+    if (renderdocApi) {
+        renderdocApi->StartFrameCapture(nullptr, nullptr);
+    }
+#endif
 
-    gpuManager.flush();
-    add.destroy();
+    // initialize device memory
+    gpu::DeviceBuffer aDevice{};
+    gpu::DeviceBuffer bDevice{};
+    gpu::DeviceBuffer resultDevice{};
+
+    TRY_EXPECTED_VOID(aDevice.init(gpuManager.allocator(), S));
+    TRY_EXPECTED_VOID(bDevice.init(gpuManager.allocator(), S));
+    TRY_EXPECTED_VOID(resultDevice.init(gpuManager.allocator(), S));
+
+    // copy host data to device
+    {
+        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(gpuManager,  //
+                                                       aDevice,  //
+                                                       ::utils::to_byte_span(aHost)));
+
+        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(gpuManager,  //
+                                                       bDevice,  //
+                                                       ::utils::to_byte_span(bHost)));
+    }
+
+    // compute
+    TRY_EXPECTED_VOID(kernel::utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
+        TRY_EXPECTED_VOID(kernel::Add::run(gpuManager, aDevice, bDevice, resultDevice));
+        return {};
+    }));
+
+    // read result
+    std::vector<float> resultHost(N);
+    gpu::HostVisibleBuffer stagingBuffer{};
+
+    {
+        TRY_EXPECTED_VOID(stagingBuffer.init(gpuManager.allocator(),  //
+                                             S,  //
+                                             true));
+
+        TRY_EXPECTED_VOID(gpu::utils::read_data_sync(gpuManager, resultDevice, stagingBuffer, S));
+        TRY_EXPECTED_VOID(stagingBuffer.copyFrom(resultHost.data(), S));
+    }
+
+#ifdef VK_ENABLE_RENDERDOC_DEBUG
+    if (renderdocApi) {
+        renderdocApi->EndFrameCapture(nullptr, nullptr);
+    }
+#endif
+
+    // clear
+    aDevice.destroy();
+    bDevice.destroy();
+    resultDevice.destroy();
+    stagingBuffer.destroy();
+    kernel::Add::destroy();
     gpuManager.destroy();
 
     return {};

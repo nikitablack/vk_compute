@@ -20,8 +20,6 @@ TEST_CASE("add - 100 elements add", "[add]") {
     gpu::GpuManager gpuManager{};
     REQUIRE(gpuManager.initialize().has_value());
 
-    kernel::Add add{};
-
     size_t constexpr N{100};
 
     std::vector<float> a(N);
@@ -33,24 +31,28 @@ TEST_CASE("add - 100 elements add", "[add]") {
         b[i] = static_cast<float>(2 * i);
     }
 
-    REQUIRE(add.run(gpuManager, a, b, result).has_value());
+    REQUIRE(kernel::Add::run(gpuManager, a, b, result).has_value());
 
     check_add(a, b, result);
+
+    kernel::Add::destroy();
+    gpuManager.destroy();
 }
 
 TEST_CASE("add - single element add", "[add]") {
     gpu::GpuManager gpuManager{};
     REQUIRE(gpuManager.initialize().has_value());
 
-    kernel::Add add{};
-
     std::vector<float> a{1.5f};
     std::vector<float> b{2.5f};
     std::vector<float> result(1);
 
-    REQUIRE(add.run(gpuManager, a, b, result).has_value());
+    REQUIRE(kernel::Add::run(gpuManager, a, b, result).has_value());
 
     check_add(a, b, result);
+
+    kernel::Add::destroy();
+    gpuManager.destroy();
 }
 
 TEST_CASE("add - zero elements add", "[add]") {
@@ -63,9 +65,12 @@ TEST_CASE("add - zero elements add", "[add]") {
     std::vector<float> b{};
     std::vector<float> result{};
 
-    REQUIRE(add.run(gpuManager, a, b, result).has_value());
+    REQUIRE(kernel::Add::run(gpuManager, a, b, result).has_value());
 
     REQUIRE(result.empty());
+
+    kernel::Add::destroy();
+    gpuManager.destroy();
 }
 
 TEST_CASE("add - non-multiple of 4 add", "[add]") {
@@ -86,7 +91,10 @@ TEST_CASE("add - non-multiple of 4 add", "[add]") {
         b[i] = static_cast<float>(i + 2);
     }
 
-    REQUIRE(add.run(gpuManager, a, b, result).has_value());
+    REQUIRE(kernel::Add::run(gpuManager, a, b, result).has_value());
 
     check_add(a, b, result);
+
+    kernel::Add::destroy();
+    gpuManager.destroy();
 }

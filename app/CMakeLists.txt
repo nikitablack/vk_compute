@@ -4,6 +4,15 @@ project(app LANGUAGES CXX)
 
 add_executable(app)
 
+option(VK_ENABLE_RENDERDOC_DEBUG "Enable Renderdoc debug" ON)
+
+if(VK_ENABLE_RENDERDOC_DEBUG)
+    target_compile_definitions(app
+        PRIVATE
+            VK_ENABLE_RENDERDOC_DEBUG
+    )
+endif()
+
 target_sources(app
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
@@ -23,9 +32,10 @@ set_target_properties(app
 
 target_link_libraries(app
     PRIVATE
+        fmt::fmt
         libs::gpu
         libs::kernel
         libs::utils
         libs::warnings_as_errors
-        fmt::fmt
+        third_party::renderdoc_api
 )

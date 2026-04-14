@@ -15,9 +15,10 @@ public:
 
 public:
     [[nodiscard]] auto init(VmaAllocator allocator,  //
-                            VkBufferUsageFlags usageFlags,  //
                             size_t size,  //
-                            bool readback = false  //
+                            bool readback = false,  //
+                            VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_2_TRANSFER_DST_BIT |
+                                                            VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT  //
                             ) noexcept -> std::expected<void, std::string>;
 
     auto destroy() noexcept -> void;

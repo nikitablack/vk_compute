@@ -29,8 +29,9 @@ namespace gpu {
 
     HostVisibleBuffer vulkanBuffer{};
     TRY_EXPECTED_VOID(vulkanBuffer.init(m_allocator,  //
-                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,  //
-                                        DEFAULT_BUFFER_SIZE));
+                                        DEFAULT_BUFFER_SIZE,  //
+                                        false,  //
+                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
 
     m_occupancyInfos.push_back(OccupancyInfo{vulkanBuffer, 0});
 
