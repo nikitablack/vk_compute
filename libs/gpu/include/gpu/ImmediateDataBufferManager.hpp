@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
 #include <expected>
@@ -30,8 +29,7 @@ public:
     ImmediateDataBufferManager() = default;
 
 public:
-    [[nodiscard]] auto init(VmaAllocator allocator,  //
-                            VkPhysicalDeviceProperties2 const& deviceProperties  //
+    [[nodiscard]] auto init(VkPhysicalDeviceProperties2 const& deviceProperties  //
                             ) noexcept -> std::expected<void, std::string>;
 
     auto destroy() noexcept -> void;
@@ -47,7 +45,6 @@ private:
         -> std::expected<PushDataResult, std::string>;
 
 private:
-    VmaAllocator m_allocator{VK_NULL_HANDLE};
     std::vector<OccupancyInfo> m_occupancyInfos{};
     uint64_t m_minStorageBufferOffsetAlignment{0};
 };

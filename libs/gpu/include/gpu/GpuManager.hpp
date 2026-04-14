@@ -9,20 +9,75 @@
 #include <gpu/StorageDescriptorSetManager.hpp>
 #include <gpu/VulkanDebugUtils.hpp>
 #include <gpu/VulkanQueue.hpp>
+#include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace gpu {
 
 class GpuManager {
+private:
+    struct PipelineData {
+        std::string name{};
+        uint32_t workgroupSizeX{0};
+        uint32_t workgroupSizeY{0};
+        uint32_t workgroupSizeZ{0};
+
+        auto operator==(PipelineData const& other) const -> bool {
+            return name == other.name &&  //
+                   workgroupSizeX == other.workgroupSizeX &&  //
+                   workgroupSizeY == other.workgroupSizeY &&  //
+                   workgroupSizeZ == other.workgroupSizeZ;
+        }
+    };
+
+    struct PipelineDataHash {
+        auto operator()(PipelineData const& p) const -> size_t {
+            size_t h{std::hash<std::string>{}(p.name)};
+
+            // Combine hashes (classic hash combine)
+            auto hashCombine{
+                [](size_t& seed, size_t value) { seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2); }};
+
+            hashCombine(h, std::hash<uint32_t>{}(p.workgroupSizeX));
+            hashCombine(h, std::hash<uint32_t>{}(p.workgroupSizeY));
+            hashCombine(h, std::hash<uint32_t>{}(p.workgroupSizeZ));
+
+            return h;
+        }
+    };
+
 public:
+    static auto get() noexcept -> GpuManager&;
+    [[nodiscard]] static auto init() noexcept -> std::expected<void, std::string>;
+    static auto destroy() noexcept -> void;
+
+    GpuManager(const GpuManager&) = delete;
+    GpuManager& operator=(const GpuManager&) = delete;
+    GpuManager(GpuManager&&) = delete;
+    GpuManager& operator=(GpuManager&&) = delete;
+
+private:
     GpuManager() = default;
+    [[nodiscard]] auto initialize() noexcept -> std::expected<void, std::string>;
 
 public:
-    [[nodiscard]] auto initialize() noexcept -> std::expected<void, std::string>;
-    auto destroy() noexcept -> void;
-    auto flush() const noexcept -> void;
+    auto addPipeline(VkPipeline pipeline,  //
+                     std::string const& name,  //
+                     uint32_t workgroupSizeX,  //
+                     uint32_t workgroupSizeY,  //
+                     uint32_t workgroupSizeZ  //
+                     ) noexcept -> void;
 
+    auto getPipeline(std::string const& name,  //
+                     uint32_t workgroupSizeX,  //
+                     uint32_t workgroupSizeY,  //
+                     uint32_t workgroupSizeZ  //
+                     ) noexcept -> std::optional<VkPipeline>;
+
+    auto destroyImpl() noexcept -> void;
+    auto flush() const noexcept -> void;
     auto allocator() const noexcept -> VmaAllocator;
     auto commandManager() noexcept -> CommandManager&;
     auto computeQueue() const noexcept -> VulkanQueue;
@@ -45,6 +100,7 @@ private:
     VkPipelineLayout m_pipelineLayout{VK_NULL_HANDLE};
     StorageDescriptorSetManager m_storageDescriptorSetManager{};
     ImmediateDataBufferManager m_immediateDataBufferManager{};
+    std::unordered_map<PipelineData, VkPipeline, PipelineDataHash> m_dataToPipeline{};
 };
 
 }  // namespace gpu

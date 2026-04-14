@@ -7,14 +7,15 @@
 
 namespace gpu::utils {
 
-auto read_data_sync(GpuManager& gpuManager,  //
-                    DeviceBuffer const& src,  //
+auto read_data_sync(DeviceBuffer const& src,  //
                     HostVisibleBuffer const& dst,  //
                     uint32_t size  //
                     ) -> std::expected<void, std::string> {
     if (dst.size() < src.size()) {
         return std::unexpected{"not enough space in destination buffer"};
     }
+
+    GpuManager& gpuManager{GpuManager::get()};
 
     TRY_EXPECTED(auto const commandBuffer, gpuManager.commandManager().commandBufferBegin());
 

@@ -9,7 +9,7 @@
 #include <gpu/HostVisibleBuffer.hpp>
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
-#include <kernel/Add.hpp>
+#include <kernel/add.hpp>
 #include <kernel/utils/benchmark_with_percentiles.hpp>
 #include <ranges>
 #include <string>
@@ -27,8 +27,7 @@
 namespace {
 
 auto main_impl() -> std::expected<void, std::string> {
-    gpu::GpuManager gpuManager{};
-    TRY_EXPECTED_VOID(gpuManager.initialize());
+    TRY_EXPECTED_VOID(gpu::GpuManager::init());
 
     uint32_t constexpr N{1024 * 1024 * 100};
     uint32_t constexpr S{N * sizeof(float)};
@@ -66,24 +65,22 @@ auto main_impl() -> std::expected<void, std::string> {
     gpu::DeviceBuffer bDevice{};
     gpu::DeviceBuffer resultDevice{};
 
-    TRY_EXPECTED_VOID(aDevice.init(gpuManager.allocator(), S));
-    TRY_EXPECTED_VOID(bDevice.init(gpuManager.allocator(), S));
-    TRY_EXPECTED_VOID(resultDevice.init(gpuManager.allocator(), S));
+    TRY_EXPECTED_VOID(aDevice.init(S));
+    TRY_EXPECTED_VOID(bDevice.init(S));
+    TRY_EXPECTED_VOID(resultDevice.init(S));
 
     // copy host data to device
     {
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(gpuManager,  //
-                                                       aDevice,  //
+        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(aDevice,  //
                                                        ::utils::to_byte_span(aHost)));
 
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(gpuManager,  //
-                                                       bDevice,  //
+        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(bDevice,  //
                                                        ::utils::to_byte_span(bHost)));
     }
 
     // compute
     TRY_EXPECTED_VOID(kernel::utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
-        TRY_EXPECTED_VOID(kernel::Add::run(gpuManager, aDevice, bDevice, resultDevice));
+        TRY_EXPECTED_VOID(kernel::add(aDevice, bDevice, resultDevice));
         return {};
     }));
 
@@ -92,11 +89,10 @@ auto main_impl() -> std::expected<void, std::string> {
     gpu::HostVisibleBuffer stagingBuffer{};
 
     {
-        TRY_EXPECTED_VOID(stagingBuffer.init(gpuManager.allocator(),  //
-                                             S,  //
+        TRY_EXPECTED_VOID(stagingBuffer.init(S,  //
                                              true));
 
-        TRY_EXPECTED_VOID(gpu::utils::read_data_sync(gpuManager, resultDevice, stagingBuffer, S));
+        TRY_EXPECTED_VOID(gpu::utils::read_data_sync(resultDevice, stagingBuffer, S));
         TRY_EXPECTED_VOID(stagingBuffer.copyFrom(resultHost.data(), S));
     }
 
@@ -111,8 +107,7 @@ auto main_impl() -> std::expected<void, std::string> {
     bDevice.destroy();
     resultDevice.destroy();
     stagingBuffer.destroy();
-    kernel::Add::destroy();
-    gpuManager.destroy();
+    gpu::GpuManager::destroy();
 
     return {};
 }

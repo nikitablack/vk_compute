@@ -1,4 +1,5 @@
 #include <cmrc/cmrc.hpp>
+#include <gpu/GpuManager.hpp>
 #include <gpu/utils/create_shader_module.hpp>
 #include <gpu/utils/get_push_constant_data.hpp>
 #include <kernel/utils/create_pipeline.hpp>
@@ -10,13 +11,13 @@ CMRC_DECLARE(kernel_shaders);
 
 namespace kernel::utils {
 
-auto create_pipeline(VkDevice device,  //
-                     VkPipelineLayout pipelineLayout,  //
-                     std::string const& shaderName,
+auto create_pipeline(std::string const& shaderName,
                      uint32_t workgroupSizeX,  //
                      uint32_t workgroupSizeY,  //
                      uint32_t workgroupSizeZ  //
                      ) noexcept -> std::expected<VkPipeline, std::string> {
+    gpu::GpuManager& gpuManager{gpu::GpuManager::get()};
+
     std::array<VkSpecializationMapEntry, 3> cpecEntries{};
     cpecEntries[0].constantID = 0;
     cpecEntries[0].offset = 0;
@@ -40,7 +41,8 @@ auto create_pipeline(VkDevice device,  //
     auto const shader{fs.open(shaderName + ".comp.spv")};
 
     TRY_EXPECTED(auto const shaderModule,
-                 gpu::utils::create_shader_module(device, ::utils::to_byte_span(shader.cbegin(), shader.size())));
+                 gpu::utils::create_shader_module(gpuManager.device(),  //
+                                                  ::utils::to_byte_span(shader.cbegin(), shader.size())));
 
     VkPipelineShaderStageCreateInfo shaderStageInfo = vku::InitStructHelper{};
     shaderStageInfo.flags = 0;
@@ -52,16 +54,16 @@ auto create_pipeline(VkDevice device,  //
     VkComputePipelineCreateInfo pipelineInfo = vku::InitStructHelper{};
     pipelineInfo.flags = 0;
     pipelineInfo.stage = shaderStageInfo;
-    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.layout = gpuManager.pipelineLayout();
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex = -1;
 
     VkPipeline pipeline{VK_NULL_HANDLE};
-    if (vkCreateComputePipelines(device, nullptr, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+    if (vkCreateComputePipelines(gpuManager.device(), nullptr, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
         return std::unexpected{"failed to create pipeline"};
     }
 
-    vkDestroyShaderModule(device, shaderModule, nullptr);
+    vkDestroyShaderModule(gpuManager.device(), shaderModule, nullptr);
 
     return pipeline;
 }

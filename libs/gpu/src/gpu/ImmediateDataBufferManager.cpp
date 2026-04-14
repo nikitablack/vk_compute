@@ -22,14 +22,10 @@ auto padding(uint64_t offset, uint64_t alignment) -> uint64_t {
 
 namespace gpu {
 
-[[nodiscard]] auto ImmediateDataBufferManager::init(VmaAllocator allocator,  //
-                                                    VkPhysicalDeviceProperties2 const& deviceProperties  //
+[[nodiscard]] auto ImmediateDataBufferManager::init(VkPhysicalDeviceProperties2 const& deviceProperties  //
                                                     ) noexcept -> std::expected<void, std::string> {
-    m_allocator = allocator;
-
     HostVisibleBuffer vulkanBuffer{};
-    TRY_EXPECTED_VOID(vulkanBuffer.init(m_allocator,  //
-                                        DEFAULT_BUFFER_SIZE,  //
+    TRY_EXPECTED_VOID(vulkanBuffer.init(DEFAULT_BUFFER_SIZE,  //
                                         false,  //
                                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
 
@@ -87,8 +83,7 @@ auto ImmediateDataBufferManager::pushDataImpl(std::span<std::byte const> data  /
         fmt::println("allocating new immediate buffer with the size {}", newSize);
 
         HostVisibleBuffer buffer{};
-        TRY_EXPECTED_VOID(buffer.init(m_allocator,  //
-                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,  //
+        TRY_EXPECTED_VOID(buffer.init(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,  //
                                       newSize));
 
         m_occupancyInfos.push_back(OccupancyInfo{buffer, 0});

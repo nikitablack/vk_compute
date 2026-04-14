@@ -1,7 +1,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <gpu/GpuManager.hpp>
-#include <kernel/Add.hpp>
+#include <kernel/add.hpp>
 
 namespace {
 
@@ -17,8 +17,7 @@ void check_add(std::span<float const> a, std::span<float const> b, std::span<flo
 }  // namespace
 
 TEST_CASE("add - 100 elements add", "[add]") {
-    gpu::GpuManager gpuManager{};
-    REQUIRE(gpuManager.initialize().has_value());
+    REQUIRE(gpu::GpuManager::init().has_value());
 
     size_t constexpr N{100};
 
@@ -31,53 +30,43 @@ TEST_CASE("add - 100 elements add", "[add]") {
         b[i] = static_cast<float>(2 * i);
     }
 
-    REQUIRE(kernel::Add::run(gpuManager, a, b, result).has_value());
+    REQUIRE(kernel::add(a, b, result).has_value());
 
     check_add(a, b, result);
 
-    kernel::Add::destroy();
-    gpuManager.destroy();
+    gpu::GpuManager::destroy();
 }
 
 TEST_CASE("add - single element add", "[add]") {
-    gpu::GpuManager gpuManager{};
-    REQUIRE(gpuManager.initialize().has_value());
+    REQUIRE(gpu::GpuManager::init().has_value());
 
     std::vector<float> a{1.5f};
     std::vector<float> b{2.5f};
     std::vector<float> result(1);
 
-    REQUIRE(kernel::Add::run(gpuManager, a, b, result).has_value());
+    REQUIRE(kernel::add(a, b, result).has_value());
 
     check_add(a, b, result);
 
-    kernel::Add::destroy();
-    gpuManager.destroy();
+    gpu::GpuManager::destroy();
 }
 
 TEST_CASE("add - zero elements add", "[add]") {
-    gpu::GpuManager gpuManager{};
-    REQUIRE(gpuManager.initialize().has_value());
-
-    kernel::Add add{};
+    REQUIRE(gpu::GpuManager::init().has_value());
 
     std::vector<float> a{};
     std::vector<float> b{};
     std::vector<float> result{};
 
-    REQUIRE(kernel::Add::run(gpuManager, a, b, result).has_value());
+    REQUIRE(kernel::add(a, b, result).has_value());
 
     REQUIRE(result.empty());
 
-    kernel::Add::destroy();
-    gpuManager.destroy();
+    gpu::GpuManager::destroy();
 }
 
 TEST_CASE("add - non-multiple of 4 add", "[add]") {
-    gpu::GpuManager gpuManager{};
-    REQUIRE(gpuManager.initialize().has_value());
-
-    kernel::Add add{};
+    REQUIRE(gpu::GpuManager::init().has_value());
 
     size_t constexpr N{10};  // not divisible by 4
     static_assert((N % 4) > 0, "number of elements should be non-multiple of 4");
@@ -91,10 +80,9 @@ TEST_CASE("add - non-multiple of 4 add", "[add]") {
         b[i] = static_cast<float>(i + 2);
     }
 
-    REQUIRE(kernel::Add::run(gpuManager, a, b, result).has_value());
+    REQUIRE(kernel::add(a, b, result).has_value());
 
     check_add(a, b, result);
 
-    kernel::Add::destroy();
-    gpuManager.destroy();
+    gpu::GpuManager::destroy();
 }

@@ -3,26 +3,23 @@
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
 #include <gpu/utils/submit.hpp>
-#include <kernel/Add.hpp>
+#include <kernel/add.hpp>
 #include <kernel/utils/create_pipeline.hpp>
 #include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
 
-namespace kernel {
+namespace {
 
-std::unordered_map<VkDevice, VkPipeline> Add::m_deviceToPipeline{};
+std::string constexpr KERNEL_NAME{"add"};
 
-auto Add::destroy() noexcept -> void {
-    for (auto const& p : m_deviceToPipeline) {
-        vkDestroyPipeline(p.first, p.second, nullptr);
-    }
 }
 
-auto Add::run(gpu::GpuManager& gpuManager,  //
-              std::span<float const> a,  //
-              std::span<float const> b,  //
-              std::span<float> result  //
-              ) noexcept -> std::expected<void, std::string> {
+namespace kernel {
+
+auto add(std::span<float const> a,  //
+         std::span<float const> b,  //
+         std::span<float> result  //
+         ) noexcept -> std::expected<void, std::string> {
     // special case
     if (a.size() == 0) {
         return {};
@@ -40,33 +37,29 @@ auto Add::run(gpu::GpuManager& gpuManager,  //
     gpu::DeviceBuffer bDevice{};
     gpu::DeviceBuffer resultDevice{};
 
-    TRY_EXPECTED_VOID(aDevice.init(gpuManager.allocator(), dataSizeBytes));
-    TRY_EXPECTED_VOID(bDevice.init(gpuManager.allocator(), dataSizeBytes));
-    TRY_EXPECTED_VOID(resultDevice.init(gpuManager.allocator(), dataSizeBytes));
+    TRY_EXPECTED_VOID(aDevice.init(dataSizeBytes));
+    TRY_EXPECTED_VOID(bDevice.init(dataSizeBytes));
+    TRY_EXPECTED_VOID(resultDevice.init(dataSizeBytes));
 
     // copy data
     {
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(gpuManager,  //
-                                                       aDevice,  //
+        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(aDevice,  //
                                                        ::utils::to_byte_span(a)));
 
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(gpuManager,  //
-                                                       bDevice,  //
+        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(bDevice,  //
                                                        ::utils::to_byte_span(b)));
     }
 
     // run compute
-    TRY_EXPECTED_VOID(run(gpuManager, aDevice, bDevice, resultDevice, dataSizeBytes));
+    TRY_EXPECTED_VOID(add(aDevice, bDevice, resultDevice, dataSizeBytes));
 
     // read back
     gpu::HostVisibleBuffer stagingBuffer{};
 
     {
-        TRY_EXPECTED_VOID(stagingBuffer.init(gpuManager.allocator(),  //
-                                             dataSizeBytes,  //
-                                             true));
+        TRY_EXPECTED_VOID(stagingBuffer.init(dataSizeBytes, true));
 
-        TRY_EXPECTED_VOID(gpu::utils::read_data_sync(gpuManager, resultDevice, stagingBuffer, dataSizeBytes));
+        TRY_EXPECTED_VOID(gpu::utils::read_data_sync(resultDevice, stagingBuffer, dataSizeBytes));
         TRY_EXPECTED_VOID(stagingBuffer.copyFrom(result.data(), dataSizeBytes));
     }
 
@@ -78,12 +71,11 @@ auto Add::run(gpu::GpuManager& gpuManager,  //
     return {};
 }
 
-[[nodiscard]] auto Add::run(gpu::GpuManager& gpuManager,  //
-                            gpu::DeviceBuffer const& a,  //
-                            gpu::DeviceBuffer const& b,  //
-                            gpu::DeviceBuffer const& result,  //
-                            std::optional<uint64_t> sizeBytes  //
-                            ) noexcept -> std::expected<void, std::string> {
+auto add(gpu::DeviceBuffer const& a,  //
+         gpu::DeviceBuffer const& b,  //
+         gpu::DeviceBuffer const& result,  //
+         std::optional<uint64_t> sizeBytes  //
+         ) noexcept -> std::expected<void, std::string> {
     using T = float;
 
     uint64_t dataSizeBytes{0};
@@ -126,19 +118,25 @@ auto Add::run(gpu::GpuManager& gpuManager,  //
     uint32_t constexpr WORKGROUP_SIZE_Z{1};
     uint32_t constexpr WORKGROUP_SIZE{WORKGROUP_SIZE_X * WORKGROUP_SIZE_Y * WORKGROUP_SIZE_Z};
 
-    VkDevice vkDevice{gpuManager.device()};
-    VkPipeline vkPipeline{m_deviceToPipeline[vkDevice]};
+    gpu::GpuManager& gpuManager{gpu::GpuManager::get()};
+    VkPipeline vkPipeline{VK_NULL_HANDLE};
 
-    // lazy pipeline initialization
-    if (!vkPipeline) {
-        TRY_EXPECTED(vkPipeline, utils::create_pipeline(vkDevice,  //
-                                                        gpuManager.pipelineLayout(),  //
-                                                        "add",  //
+    if (auto p{gpuManager.getPipeline(KERNEL_NAME,  //
+                                      WORKGROUP_SIZE_X,  //
+                                      WORKGROUP_SIZE_Y,  //
+                                      WORKGROUP_SIZE_Z)}) {
+        vkPipeline = *p;
+    } else {
+        TRY_EXPECTED(vkPipeline, utils::create_pipeline(KERNEL_NAME,  //
                                                         WORKGROUP_SIZE_X,  //
                                                         WORKGROUP_SIZE_Y,  //
                                                         WORKGROUP_SIZE_Z));
 
-        m_deviceToPipeline[vkDevice] = vkPipeline;
+        gpuManager.addPipeline(vkPipeline,  //
+                               KERNEL_NAME,  //
+                               WORKGROUP_SIZE_X,  //
+                               WORKGROUP_SIZE_Y,  //
+                               WORKGROUP_SIZE_Z);
     }
 
     // compute

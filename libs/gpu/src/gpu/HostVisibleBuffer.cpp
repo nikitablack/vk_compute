@@ -1,14 +1,13 @@
 #include <cstring>
+#include <gpu/GpuManager.hpp>
 #include <gpu/HostVisibleBuffer.hpp>
 
 namespace gpu {
 
-auto HostVisibleBuffer::init(VmaAllocator allocator,  //
-                             size_t size,  //
+auto HostVisibleBuffer::init(size_t size,  //
                              bool readback,  //
                              VkBufferUsageFlags usageFlags  //
                              ) noexcept -> std::expected<void, std::string> {
-    m_allocator = allocator;
     m_size = size;
 
     VkBufferCreateInfo bufferCreateInfo{};
@@ -37,8 +36,12 @@ auto HostVisibleBuffer::init(VmaAllocator allocator,  //
     allocationCreateInfo.pool = VK_NULL_HANDLE;
     allocationCreateInfo.pUserData = nullptr;
 
-    VmaAllocationInfo allocationInfo;
-    if (vmaCreateBuffer(m_allocator, &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_allocation,
+    VmaAllocationInfo allocationInfo{};
+    if (vmaCreateBuffer(GpuManager::get().allocator(),  //
+                        &bufferCreateInfo,  //
+                        &allocationCreateInfo,  //
+                        &m_buffer,  //
+                        &m_allocation,  //
                         &allocationInfo) != VK_SUCCESS) {
         return std::unexpected{"failed to create host-visible buffer"};
     }
@@ -49,7 +52,11 @@ auto HostVisibleBuffer::init(VmaAllocator allocator,  //
 auto HostVisibleBuffer::copyTo(std::span<std::byte const> data,  //
                                size_t offset  //
                                ) noexcept -> std::expected<void, std::string> {
-    if (vmaCopyMemoryToAllocation(m_allocator, data.data(), m_allocation, offset, data.size()) != VK_SUCCESS) {
+    if (vmaCopyMemoryToAllocation(GpuManager::get().allocator(),  //
+                                  data.data(),  //
+                                  m_allocation,  //
+                                  offset,  //
+                                  data.size()) != VK_SUCCESS) {
         return std::unexpected{"failed to copy data to host-visible buffer"};
     }
 
@@ -57,7 +64,7 @@ auto HostVisibleBuffer::copyTo(std::span<std::byte const> data,  //
 }
 
 auto HostVisibleBuffer::copyFrom(void* dst, size_t size, size_t offset) noexcept -> std::expected<void, std::string> {
-    if (vmaCopyAllocationToMemory(m_allocator, m_allocation, offset, dst, size) != VK_SUCCESS) {
+    if (vmaCopyAllocationToMemory(GpuManager::get().allocator(), m_allocation, offset, dst, size) != VK_SUCCESS) {
         return std::unexpected{"failed to copy data from host-visible buffer"};
     }
 
@@ -65,13 +72,12 @@ auto HostVisibleBuffer::copyFrom(void* dst, size_t size, size_t offset) noexcept
 }
 
 auto HostVisibleBuffer::destroy() noexcept -> void {
-    if (!m_allocator) {
+    if (!m_buffer) {
         return;
     }
 
-    vmaDestroyBuffer(m_allocator, m_buffer, m_allocation);
+    vmaDestroyBuffer(GpuManager::get().allocator(), m_buffer, m_allocation);
 
-    m_allocator = VK_NULL_HANDLE;
     m_allocation = VK_NULL_HANDLE;
     m_buffer = VK_NULL_HANDLE;
     m_size = 0;

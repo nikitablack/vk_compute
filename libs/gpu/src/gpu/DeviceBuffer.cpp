@@ -1,13 +1,12 @@
 #include <gpu/DeviceBuffer.hpp>
+#include <gpu/GpuManager.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace gpu {
 
-auto DeviceBuffer::init(VmaAllocator allocator,  //
-                        size_t size,  //
+auto DeviceBuffer::init(size_t size,  //
                         VkBufferUsageFlags2 usageFlags  //
                         ) noexcept -> std::expected<void, std::string> {
-    m_allocator = allocator;
     m_size = size;
 
     VkBufferUsageFlags2CreateInfo flagsCreateInfo = vku::InitStructHelper{};
@@ -30,8 +29,12 @@ auto DeviceBuffer::init(VmaAllocator allocator,  //
     allocationCreateInfo.pool = VK_NULL_HANDLE;
     allocationCreateInfo.pUserData = nullptr;
 
-    VmaAllocationInfo allocationInfo;
-    if (vmaCreateBuffer(m_allocator, &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_allocation,
+    VmaAllocationInfo allocationInfo{};
+    if (vmaCreateBuffer(GpuManager::get().allocator(),  //
+                        &bufferCreateInfo,  //
+                        &allocationCreateInfo,  //
+                        &m_buffer,  //
+                        &m_allocation,  //
                         &allocationInfo) != VK_SUCCESS) {
         return std::unexpected{"failed to create device buffer"};
     }
@@ -40,13 +43,12 @@ auto DeviceBuffer::init(VmaAllocator allocator,  //
 }
 
 auto DeviceBuffer::destroy() noexcept -> void {
-    if (!m_allocator) {
+    if (!m_buffer) {
         return;
     }
 
-    vmaDestroyBuffer(m_allocator, m_buffer, m_allocation);
+    vmaDestroyBuffer(GpuManager::get().allocator(), m_buffer, m_allocation);
 
-    m_allocator = VK_NULL_HANDLE;
     m_allocation = VK_NULL_HANDLE;
     m_buffer = VK_NULL_HANDLE;
     m_size = 0;

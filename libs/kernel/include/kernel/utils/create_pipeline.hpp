@@ -7,9 +7,7 @@
 
 namespace kernel::utils {
 
-[[nodiscard]] auto create_pipeline(VkDevice device,  //
-                                   VkPipelineLayout pipelineLayout,  //
-                                   std::string const& shaderName,  //
+[[nodiscard]] auto create_pipeline(std::string const& shaderName,  //
                                    uint32_t workgroupSizeX,  //
                                    uint32_t workgroupSizeY,  //
                                    uint32_t workgroupSizeZ  //

@@ -13,8 +13,7 @@ public:
     DeviceBuffer() = default;
 
 public:
-    [[nodiscard]] auto init(VmaAllocator allocator,  //
-                            size_t size,  //
+    [[nodiscard]] auto init(size_t size,  //
                             VkBufferUsageFlags2 usageFlags = VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT |
                                                              VK_BUFFER_USAGE_2_TRANSFER_DST_BIT |
                                                              VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT  //
@@ -26,7 +25,6 @@ public:
     auto buffer() const noexcept -> VkBuffer;
 
 private:
-    VmaAllocator m_allocator{VK_NULL_HANDLE};
     VkBuffer m_buffer{VK_NULL_HANDLE};
     uint64_t m_size{0};
     VmaAllocation m_allocation{VK_NULL_HANDLE};

@@ -13,7 +13,6 @@
 namespace gpu {
 
 class DeviceBuffer;
-class GpuManager;
 struct VulkanQueue;
 
 }  // namespace gpu
@@ -39,8 +38,7 @@ struct InitData {
                                VkDeviceSize stagingBufferOffset = 0  //
                                ) noexcept -> std::expected<InitData, std::string>;
 
-[[nodiscard]] auto init_buffer_sync(GpuManager& gpuManager,  //
-                                    DeviceBuffer const& deviceBuffer,  //
+[[nodiscard]] auto init_buffer_sync(DeviceBuffer const& deviceBuffer,  //
                                     std::span<std::byte const> data  //
                                     ) noexcept -> std::expected<void, std::string>;
 

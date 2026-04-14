@@ -12,12 +12,12 @@ target_sources(kernel
         ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/utils/benchmark_with_percentiles.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/utils/create_pipeline.hpp
 
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/Add.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/add.hpp
 
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/utils/create_pipeline.cpp
 
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/Add.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/add.cpp
 )
 
 target_include_directories(kernel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

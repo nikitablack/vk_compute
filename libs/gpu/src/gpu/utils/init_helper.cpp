@@ -56,12 +56,13 @@ auto copy_to(VkCommandBuffer commandBuffer,  //
     return initData;
 }
 
-auto init_buffer_sync(GpuManager& gpuManager,  //
-                      DeviceBuffer const& deviceBuffer,  //
+auto init_buffer_sync(DeviceBuffer const& deviceBuffer,  //
                       std::span<std::byte const> data  //
                       ) noexcept -> std::expected<void, std::string> {
+    GpuManager& gpuManager{GpuManager::get()};
+
     HostVisibleBuffer stagingBuffer{};
-    TRY_EXPECTED_VOID(stagingBuffer.init(gpuManager.allocator(), data.size()));
+    TRY_EXPECTED_VOID(stagingBuffer.init(data.size()));
     TRY_EXPECTED_VOID(stagingBuffer.copyTo(data));
 
     TRY_EXPECTED(auto const commandBuffer, gpuManager.commandManager().commandBufferBegin());
