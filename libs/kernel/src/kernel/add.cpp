@@ -27,7 +27,7 @@ auto add(std::span<float const> a,  //
 
     // input validation
     if ((a.size() != b.size()) || (a.size() != result.size())) {
-        return std::unexpected("input buffers size mismatch");
+        return std::unexpected("input data size mismatch");
     }
 
     uint32_t const dataSizeBytes{static_cast<uint32_t>(a.size_bytes())};

@@ -20,22 +20,21 @@ layout (set = 0, binding = 0) buffer DataDescriptors {
 } dataDescriptors[];
 
 void main() {
-    uvec2 gid = gl_GlobalInvocationID.xy;
-    uint gridWidth = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
-    uint index = gid.y * gridWidth + gid.x;
+    const uint globalIdX = gl_GlobalInvocationID.x;
 
-    if(index >= pushConstants.N){
+    if(globalIdX >= pushConstants.N){
         return;
     }
 
-    uint aInd = nonuniformEXT(pushConstants.aDescriptorIndex);
-    uint bInd = nonuniformEXT(pushConstants.bDescriptorIndex);
-    uint outInd = nonuniformEXT(pushConstants.outDescriptorIndex);
+    const uint aInd = nonuniformEXT(pushConstants.aDescriptorIndex);
+    const uint bInd = nonuniformEXT(pushConstants.bDescriptorIndex);
+    const uint outInd = nonuniformEXT(pushConstants.outDescriptorIndex);
 
-    float a = dataDescriptors[aInd].data[index];
-    float b = dataDescriptors[bInd].data[index];
-    float result = a + b;
-    dataDescriptors[outInd].data[index] = result;
+    const float a = dataDescriptors[aInd].data[globalIdX];
+    const float b = dataDescriptors[bInd].data[globalIdX];
+    const float result = a + b;
+
+    dataDescriptors[outInd].data[globalIdX] = result;
 
     // debugPrintfEXT("%d\n", gl_LocalInvocationID.x);
 }

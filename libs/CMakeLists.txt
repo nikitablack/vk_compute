@@ -4,3 +4,8 @@ add_subdirectory(gpu)
 add_subdirectory(kernel)
 add_subdirectory(warnings)
 add_subdirectory(utils)
+
+if(BUILD_CUDA)
+    add_subdirectory(cuda)
+endif()
+

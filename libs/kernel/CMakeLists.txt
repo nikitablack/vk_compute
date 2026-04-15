@@ -9,7 +9,6 @@ add_library(libs::kernel
 
 target_sources(kernel
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/utils/benchmark_with_percentiles.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/utils/create_pipeline.hpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/add.hpp
@@ -34,7 +33,7 @@ target_link_libraries(kernel
         libs::utils
         libs::warnings_as_errors
         ${kernel_shaders}
-        dl
+        dl # for renderdoc
 )
 
 set_target_properties(kernel

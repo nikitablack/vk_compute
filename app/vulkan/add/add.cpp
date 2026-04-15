@@ -1,5 +1,4 @@
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 
 #include <algorithm>
 #include <cstdlib>
@@ -10,9 +9,9 @@
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
 #include <kernel/add.hpp>
-#include <kernel/utils/benchmark_with_percentiles.hpp>
 #include <ranges>
 #include <string>
+#include <utils/benchmark_with_percentiles.hpp>
 #include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
 
@@ -79,7 +78,7 @@ auto main_impl() -> std::expected<void, std::string> {
     }
 
     // compute
-    TRY_EXPECTED_VOID(kernel::utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
+    TRY_EXPECTED_VOID(utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
         TRY_EXPECTED_VOID(kernel::add(aDevice, bDevice, resultDevice));
         return {};
     }));
