@@ -1,3 +1,5 @@
+#include <fmt/core.h>
+
 #include <cuda/add.hpp>
 #include <cuda/utils/check_error.hpp>
 #include <utils/try_optional.hpp>
@@ -22,6 +24,32 @@ __global__ auto gpu_add(float const* __restrict__ a,  //
     result[globalIdX] = vc;
 }
 
+struct DeviceData {
+    float* a{nullptr};
+    float* b{nullptr};
+    float* result{nullptr};
+
+    ~DeviceData() {
+        if (a) {
+            if (cudaFree(a) != cudaSuccess) {
+                fmt::println("failed to free cuda memory");
+            }
+        }
+
+        if (b) {
+            if (cudaFree(b) != cudaSuccess) {
+                fmt::println("failed to free cuda memory");
+            }
+        }
+
+        if (result) {
+            if (cudaFree(result) != cudaSuccess) {
+                fmt::println("failed to free cuda memory");
+            }
+        }
+    }
+};
+
 }  // namespace
 
 namespace cuda {
@@ -42,24 +70,18 @@ auto add(std::span<float const> aHost,  //
 
     uint32_t const dataSizeBytes{static_cast<uint32_t>(aHost.size_bytes())};
 
-    float* aDevice{nullptr};
-    float* bDevice{nullptr};
-    float* resultDevice{nullptr};
+    DeviceData deviceData{};
 
-    CHECK_ERROR_OPT(cudaMalloc(&aDevice, dataSizeBytes));
-    CHECK_ERROR_OPT(cudaMalloc(&bDevice, dataSizeBytes));
-    CHECK_ERROR_OPT(cudaMalloc(&resultDevice, dataSizeBytes));
+    CHECK_ERROR_OPT(cudaMalloc(&deviceData.a, dataSizeBytes));
+    CHECK_ERROR_OPT(cudaMalloc(&deviceData.b, dataSizeBytes));
+    CHECK_ERROR_OPT(cudaMalloc(&deviceData.result, dataSizeBytes));
 
-    CHECK_ERROR_OPT(cudaMemcpy(aDevice, aHost.data(), dataSizeBytes, cudaMemcpyHostToDevice));
-    CHECK_ERROR_OPT(cudaMemcpy(bDevice, bHost.data(), dataSizeBytes, cudaMemcpyHostToDevice));
+    CHECK_ERROR_OPT(cudaMemcpy(deviceData.a, aHost.data(), dataSizeBytes, cudaMemcpyHostToDevice));
+    CHECK_ERROR_OPT(cudaMemcpy(deviceData.b, bHost.data(), dataSizeBytes, cudaMemcpyHostToDevice));
 
-    TRY_OPTIONAL(add(aDevice, bDevice, resultDevice, dataSizeBytes));
+    TRY_OPTIONAL(add(deviceData.a, deviceData.b, deviceData.result, dataSizeBytes));
 
-    CHECK_ERROR_OPT(cudaMemcpy(resultHost.data(), resultDevice, dataSizeBytes, cudaMemcpyDeviceToHost));
-
-    CHECK_ERROR_OPT(cudaFree(aDevice));
-    CHECK_ERROR_OPT(cudaFree(bDevice));
-    CHECK_ERROR_OPT(cudaFree(resultDevice));
+    CHECK_ERROR_OPT(cudaMemcpy(resultHost.data(), deviceData.result, dataSizeBytes, cudaMemcpyDeviceToHost));
 
     return std::nullopt;
 }

@@ -88,9 +88,7 @@ auto main_impl() -> std::expected<void, std::string> {
     gpu::HostVisibleBuffer stagingBuffer{};
 
     {
-        TRY_EXPECTED_VOID(stagingBuffer.init(S,  //
-                                             true));
-
+        TRY_EXPECTED_VOID(stagingBuffer.init(S, true));
         TRY_EXPECTED_VOID(gpu::utils::read_data_sync(resultDevice, stagingBuffer, S));
         TRY_EXPECTED_VOID(stagingBuffer.copyFrom(resultHost.data(), S));
     }

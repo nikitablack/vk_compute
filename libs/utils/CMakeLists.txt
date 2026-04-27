@@ -10,6 +10,7 @@ add_library(libs::utils
 target_sources(utils
     INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/include/utils/benchmark_with_percentiles.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/utils/ScopeGuard.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/utils/to_span.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/utils/try_expected.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/utils/try_optional.hpp

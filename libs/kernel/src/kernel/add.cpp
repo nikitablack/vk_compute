@@ -1,3 +1,5 @@
+#include <fmt/core.h>
+
 #include <gpu/GpuManager.hpp>
 #include <gpu/utils/get_push_constant_data.hpp>
 #include <gpu/utils/init_helper.hpp>
@@ -5,6 +7,7 @@
 #include <gpu/utils/submit.hpp>
 #include <kernel/add.hpp>
 #include <kernel/utils/create_pipeline.hpp>
+#include <utils/ScopeGuard.hpp>
 #include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
 
@@ -12,7 +15,21 @@ namespace {
 
 std::string constexpr KERNEL_NAME{"add"};
 
-}
+struct DeviceData {
+    gpu::DeviceBuffer a{};
+    gpu::DeviceBuffer b{};
+    gpu::DeviceBuffer result{};
+    gpu::HostVisibleBuffer staging{};
+
+    ~DeviceData() {
+        a.destroy();
+        b.destroy();
+        result.destroy();
+        staging.destroy();
+    }
+};
+
+}  // namespace
 
 namespace kernel {
 
@@ -33,40 +50,31 @@ auto add(std::span<float const> a,  //
     uint32_t const dataSizeBytes{static_cast<uint32_t>(a.size_bytes())};
 
     // create buffers
-    gpu::DeviceBuffer aDevice{};
-    gpu::DeviceBuffer bDevice{};
-    gpu::DeviceBuffer resultDevice{};
+    DeviceData deviceData{};
 
-    TRY_EXPECTED_VOID(aDevice.init(dataSizeBytes));
-    TRY_EXPECTED_VOID(bDevice.init(dataSizeBytes));
-    TRY_EXPECTED_VOID(resultDevice.init(dataSizeBytes));
+    TRY_EXPECTED_VOID(deviceData.a.init(dataSizeBytes));
+    TRY_EXPECTED_VOID(deviceData.b.init(dataSizeBytes));
+    TRY_EXPECTED_VOID(deviceData.result.init(dataSizeBytes));
 
     // copy data
     {
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(aDevice,  //
+        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(deviceData.a,  //
                                                        ::utils::to_byte_span(a)));
 
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(bDevice,  //
+        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(deviceData.b,  //
                                                        ::utils::to_byte_span(b)));
     }
 
     // run compute
-    TRY_EXPECTED_VOID(add(aDevice, bDevice, resultDevice, dataSizeBytes));
+    TRY_EXPECTED_VOID(add(deviceData.a, deviceData.b, deviceData.result, dataSizeBytes));
 
     // read back
-    gpu::HostVisibleBuffer stagingBuffer{};
-
     {
-        TRY_EXPECTED_VOID(stagingBuffer.init(dataSizeBytes, true));
+        TRY_EXPECTED_VOID(deviceData.staging.init(dataSizeBytes, true));
 
-        TRY_EXPECTED_VOID(gpu::utils::read_data_sync(resultDevice, stagingBuffer, dataSizeBytes));
-        TRY_EXPECTED_VOID(stagingBuffer.copyFrom(result.data(), dataSizeBytes));
+        TRY_EXPECTED_VOID(gpu::utils::read_data_sync(deviceData.result, deviceData.staging, dataSizeBytes));
+        TRY_EXPECTED_VOID(deviceData.staging.copyFrom(result.data(), dataSizeBytes));
     }
-
-    aDevice.destroy();
-    bDevice.destroy();
-    resultDevice.destroy();
-    stagingBuffer.destroy();
 
     return {};
 }
@@ -132,6 +140,7 @@ auto add(gpu::DeviceBuffer const& a,  //
                                                         WORKGROUP_SIZE_Y,  //
                                                         WORKGROUP_SIZE_Z));
 
+        // cache the pipeline
         gpuManager.addPipeline(vkPipeline,  //
                                KERNEL_NAME,  //
                                WORKGROUP_SIZE_X,  //
@@ -142,6 +151,14 @@ auto add(gpu::DeviceBuffer const& a,  //
     // compute
     {
         TRY_EXPECTED(auto const commandBuffer, gpuManager.commandManager().commandBufferBegin());
+
+        // RAII cleanup
+        auto const guard{::utils::make_scope_guard([&] {
+            gpuManager.storageDescriptorSetManager().reset();
+            if (auto const r{gpuManager.commandManager().resetCommandBuffer(commandBuffer)}; !r) {
+                fmt::println("{}", r.error());
+            }
+        })};
 
         // update descriptors
         {
@@ -163,7 +180,7 @@ auto add(gpu::DeviceBuffer const& a,  //
             TRY_EXPECTED(uint32_t const descriptorIndexOut,
                          gpuManager.storageDescriptorSetManager().push(commandBuffer, bufferInfo));
 
-            // see add.cpmp
+            // see add.comp
             auto const pushConstData{gpu::utils::get_push_constant_data(dataCount,  //
                                                                         descriptorIndexA,  //
                                                                         descriptorIndexB,  //
@@ -192,9 +209,6 @@ auto add(gpu::DeviceBuffer const& a,  //
         if (vkQueueWaitIdle(gpuManager.computeQueue().queue) != VK_SUCCESS) {
             return std::unexpected{"failed to wait queue"};
         }
-
-        gpuManager.storageDescriptorSetManager().reset();
-        TRY_EXPECTED_VOID(gpuManager.commandManager().resetCommandBuffer(commandBuffer));
     }
 
     return {};
