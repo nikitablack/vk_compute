@@ -30,8 +30,6 @@ TEST_CASE("add - 100 elements add", "[add]") {
 
     REQUIRE_FALSE(cuda::add(a, b, result).has_value());
 
-    std::cout << "AAAAAAAAAAAAAAAAAAA " << result[3] << std::endl;
-
     check_add(a, b, result);
 }
 
