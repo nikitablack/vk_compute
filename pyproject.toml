@@ -1,0 +1,12 @@
+[build-system]
+requires = ["scikit-build-core", "pybind11", "numpy"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "python_kernel"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = ["numpy"]
+
+[tool.scikit-build]
+cmake.version = ">=3.25"

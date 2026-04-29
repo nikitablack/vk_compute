@@ -49,3 +49,29 @@ addCompileShadersCommand(TARGET_NAME ${kernel_shaders}
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/add.comp
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/add_v.comp
 )
+
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+find_package(pybind11 REQUIRED)
+
+pybind11_add_module(python_kernel
+    ${CMAKE_CURRENT_SOURCE_DIR}/bindings/bindings.cpp
+)
+
+install(TARGETS
+            python_kernel
+        LIBRARY DESTINATION
+            .
+)
+
+target_link_libraries(python_kernel
+    PRIVATE
+        libs::kernel
+        libs::utils
+)
+
+set_target_properties(python_kernel
+    PROPERTIES
+        CXX_STANDARD 23
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO
+)

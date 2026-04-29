@@ -1,8 +1,11 @@
+#include <fmt/core.h>
+
 #include <gpu/DeviceBuffer.hpp>
 #include <gpu/GpuManager.hpp>
 #include <gpu/VulkanQueue.hpp>
 #include <gpu/utils/barrier_helper.hpp>
 #include <gpu/utils/init_helper.hpp>
+#include <utils/ScopeGuard.hpp>
 #include <utils/try_expected.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -59,6 +62,10 @@ auto copy_to(VkCommandBuffer commandBuffer,  //
 auto init_buffer_sync(DeviceBuffer const& deviceBuffer,  //
                       std::span<std::byte const> data  //
                       ) noexcept -> std::expected<void, std::string> {
+    if (!GpuManager::initialized()) {
+        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
+    }
+
     GpuManager& gpuManager{GpuManager::get()};
 
     HostVisibleBuffer stagingBuffer{};
@@ -66,6 +73,14 @@ auto init_buffer_sync(DeviceBuffer const& deviceBuffer,  //
     TRY_EXPECTED_VOID(stagingBuffer.copyTo(data));
 
     TRY_EXPECTED(auto const commandBuffer, gpuManager.commandManager().commandBufferBegin());
+
+    // RAII cleanup
+    auto const guard{::utils::make_scope_guard([&] {
+        gpuManager.storageDescriptorSetManager().reset();
+        if (auto const r{gpuManager.commandManager().resetCommandBuffer(commandBuffer)}; !r) {
+            fmt::println("{}", r.error());
+        }
+    })};
 
     TRY_EXPECTED(InitData initData,
                  init_buffer(commandBuffer,  //

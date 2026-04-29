@@ -1,8 +1,12 @@
+#include <fmt/core.h>
+
 #include <gpu/DeviceBuffer.hpp>
 #include <gpu/GpuManager.hpp>
+#include <gpu/HostVisibleBuffer.hpp>
 #include <gpu/utils/barrier_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
 #include <gpu/utils/submit.hpp>
+#include <utils/ScopeGuard.hpp>
 #include <utils/try_expected.hpp>
 
 namespace gpu::utils {
@@ -11,6 +15,10 @@ auto read_data_sync(DeviceBuffer const& src,  //
                     HostVisibleBuffer const& dst,  //
                     uint32_t size  //
                     ) -> std::expected<void, std::string> {
+    if (!GpuManager::initialized()) {
+        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
+    }
+
     if (dst.size() < src.size()) {
         return std::unexpected{"not enough space in destination buffer"};
     }
@@ -18,6 +26,14 @@ auto read_data_sync(DeviceBuffer const& src,  //
     GpuManager& gpuManager{GpuManager::get()};
 
     TRY_EXPECTED(auto const commandBuffer, gpuManager.commandManager().commandBufferBegin());
+
+    // RAII cleanup
+    auto const guard{::utils::make_scope_guard([&] {
+        gpuManager.storageDescriptorSetManager().reset();
+        if (auto const r{gpuManager.commandManager().resetCommandBuffer(commandBuffer)}; !r) {
+            fmt::println("{}", r.error());
+        }
+    })};
 
     before_read(commandBuffer, src);
 

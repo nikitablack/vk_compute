@@ -21,6 +21,8 @@
 
 namespace gpu {
 
+bool GpuManager::m_initialized{false};
+
 auto GpuManager::get() noexcept -> GpuManager& {
     static GpuManager gpuManager{};
 
@@ -28,22 +30,30 @@ auto GpuManager::get() noexcept -> GpuManager& {
 }
 
 auto GpuManager::init() noexcept -> std::expected<void, std::string> {
-    static bool initFlag{false};
-
     GpuManager& gpuManager{GpuManager::get()};
 
-    if (!initFlag) {
+    if (!GpuManager::m_initialized) {
         TRY_EXPECTED_VOID(gpuManager.initialize());
-        initFlag = true;
+        GpuManager::m_initialized = true;
     }
 
     return {};
 }
 
+auto GpuManager::initialized() noexcept -> bool {
+    return GpuManager::m_initialized;
+}
+
 auto GpuManager::destroy() noexcept -> void {
+    if (!GpuManager::m_initialized) {
+        return;
+    }
+
     GpuManager& gpuManager{GpuManager::get()};
 
     gpuManager.destroyImpl();
+
+    GpuManager::m_initialized = false;
 }
 
 auto GpuManager::initialize() noexcept -> std::expected<void, std::string> {
@@ -95,8 +105,6 @@ auto GpuManager::initialize() noexcept -> std::expected<void, std::string> {
                                                          m_storageDescriptorSetLayout,  //
                                                          REQUIRED_STORAGE_DESCRIPTOR_COUNT));
 
-    TRY_EXPECTED_VOID(m_immediateDataBufferManager.init(m_physicalDeviceProperties));
-
     return {};
 }
 
@@ -113,8 +121,6 @@ auto GpuManager::destroyImpl() noexcept -> void {
         vkDestroyPipeline(m_device, p.second, nullptr);
     }
     m_dataToPipeline.clear();
-
-    m_immediateDataBufferManager.destroy();
 
     m_storageDescriptorSetManager.destroy();
 

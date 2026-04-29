@@ -7,6 +7,10 @@ namespace gpu {
 auto DeviceBuffer::init(size_t size,  //
                         VkBufferUsageFlags2 usageFlags  //
                         ) noexcept -> std::expected<void, std::string> {
+    if (!GpuManager::initialized()) {
+        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
+    }
+
     m_size = size;
 
     VkBufferUsageFlags2CreateInfo flagsCreateInfo = vku::InitStructHelper{};

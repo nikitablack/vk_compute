@@ -16,6 +16,10 @@ auto create_pipeline(std::string const& shaderName,
                      uint32_t workgroupSizeY,  //
                      uint32_t workgroupSizeZ  //
                      ) noexcept -> std::expected<VkPipeline, std::string> {
+    if (!gpu::GpuManager::initialized()) {
+        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
+    }
+
     gpu::GpuManager& gpuManager{gpu::GpuManager::get()};
 
     std::array<VkSpecializationMapEntry, 3> cpecEntries{};

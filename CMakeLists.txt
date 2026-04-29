@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 
 project(compute LANGUAGES CXX)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 option(BUILD_TESTS "Whether or not to build the tests" OFF)
 option(BUILD_CUDA "Whether or not to build Cuda code" ON)
 

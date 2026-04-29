@@ -84,6 +84,10 @@ auto add(gpu::DeviceBuffer const& a,  //
          gpu::DeviceBuffer const& result,  //
          std::optional<uint64_t> sizeBytes  //
          ) noexcept -> std::expected<void, std::string> {
+    if (!gpu::GpuManager::initialized()) {
+        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
+    }
+
     using T = float;
 
     uint64_t dataSizeBytes{0};

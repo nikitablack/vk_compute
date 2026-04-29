@@ -5,7 +5,6 @@
 
 #include <expected>
 #include <gpu/CommandManager.hpp>
-#include <gpu/ImmediateDataBufferManager.hpp>
 #include <gpu/StorageDescriptorSetManager.hpp>
 #include <gpu/VulkanDebugUtils.hpp>
 #include <gpu/VulkanQueue.hpp>
@@ -51,6 +50,7 @@ private:
 public:
     static auto get() noexcept -> GpuManager&;
     [[nodiscard]] static auto init() noexcept -> std::expected<void, std::string>;
+    static auto initialized() noexcept -> bool;
     static auto destroy() noexcept -> void;
 
     GpuManager(const GpuManager&) = delete;
@@ -88,6 +88,9 @@ public:
     auto storageDescriptorSetManager() noexcept -> StorageDescriptorSetManager&;
 
 private:
+    static bool m_initialized;
+
+private:
     VkInstance m_instance{VK_NULL_HANDLE};
     VkPhysicalDevice m_physicalDevice{VK_NULL_HANDLE};
     VkPhysicalDeviceProperties2 m_physicalDeviceProperties{};
@@ -99,7 +102,6 @@ private:
     VkDescriptorSetLayout m_storageDescriptorSetLayout{VK_NULL_HANDLE};
     VkPipelineLayout m_pipelineLayout{VK_NULL_HANDLE};
     StorageDescriptorSetManager m_storageDescriptorSetManager{};
-    ImmediateDataBufferManager m_immediateDataBufferManager{};
     std::unordered_map<PipelineData, VkPipeline, PipelineDataHash> m_dataToPipeline{};
 };
 

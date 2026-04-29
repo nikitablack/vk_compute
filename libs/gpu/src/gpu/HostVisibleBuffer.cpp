@@ -8,6 +8,10 @@ auto HostVisibleBuffer::init(size_t size,  //
                              bool readback,  //
                              VkBufferUsageFlags usageFlags  //
                              ) noexcept -> std::expected<void, std::string> {
+    if (!GpuManager::initialized()) {
+        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
+    }
+
     m_size = size;
 
     VkBufferCreateInfo bufferCreateInfo{};
@@ -52,6 +56,10 @@ auto HostVisibleBuffer::init(size_t size,  //
 auto HostVisibleBuffer::copyTo(std::span<std::byte const> data,  //
                                size_t offset  //
                                ) noexcept -> std::expected<void, std::string> {
+    if (!m_allocation) {
+        return std::unexpected{"HostVisibleBuffer is not initialized. Did you forget to call init()?"};
+    }
+
     if (vmaCopyMemoryToAllocation(GpuManager::get().allocator(),  //
                                   data.data(),  //
                                   m_allocation,  //
@@ -64,6 +72,10 @@ auto HostVisibleBuffer::copyTo(std::span<std::byte const> data,  //
 }
 
 auto HostVisibleBuffer::copyFrom(void* dst, size_t size, size_t offset) noexcept -> std::expected<void, std::string> {
+    if (!m_allocation) {
+        return std::unexpected{"HostVisibleBuffer is not initialized. Did you forget to call init()?"};
+    }
+
     if (vmaCopyAllocationToMemory(GpuManager::get().allocator(), m_allocation, offset, dst, size) != VK_SUCCESS) {
         return std::unexpected{"failed to copy data from host-visible buffer"};
     }
