@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/RequiredDeviceExtensions.hpp>
 #include <gpu/impl/check_physical_device_support.hpp>
@@ -9,7 +9,7 @@ namespace gpu::impl {
 
 [[nodiscard]] auto get_supported_physical_devices(VkInstance instance) noexcept
     -> std::expected<std::vector<VkPhysicalDevice>, std::string> {
-    fmt::println("getting supported physical devices");
+    spdlog::trace("getting supported physical devices");
 
     RequiredDeviceExtensions::print();
     features::RequiredFeatures::print();
@@ -34,9 +34,9 @@ namespace gpu::impl {
 
         if (auto const result{check_physical_device_support(device)}; result) {
             supportedPhysicalDevices.push_back(device);
-            fmt::println("\t{} is supported", props.properties.deviceName);
+            spdlog::info("\t{} is supported", props.properties.deviceName);
         } else {
-            fmt::println("\t{} is not supported: \n\t\t{}", props.properties.deviceName, result.error());
+            spdlog::info("\t{} is not supported: \n\t\t{}", props.properties.deviceName, result.error());
         }
     }
 
@@ -44,12 +44,11 @@ namespace gpu::impl {
         return std::unexpected{"failed to find any supported devices"};
     }
 
-    fmt::println("supported devices:");
-
+    spdlog::info("supported devices:");
     for (size_t i{0}; i < supportedPhysicalDevices.size(); ++i) {
         auto const props{get_physical_device_properties(supportedPhysicalDevices[i])};
 
-        fmt::println("\t{}: {}", i, props.properties.deviceName);
+        spdlog::info("\t{}: {}", i, props.properties.deviceName);
     }
 
     return supportedPhysicalDevices;

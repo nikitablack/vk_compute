@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 #include <vulkan/vulkan.h>
 
 #include <gpu/impl/RequiredInstanceExtensions.hpp>
@@ -17,10 +17,9 @@ auto RequiredInstanceExtensions::get() noexcept -> std::vector<std::string> {
 }
 
 auto RequiredInstanceExtensions::print() noexcept -> void {
-    fmt::println("required instance extensions:");
-
+    spdlog::info("required instance extensions:");
     for (auto const& ext : get()) {
-        fmt::println("\t{}", ext);
+        spdlog::info("\t{}", ext);
     }
 }
 

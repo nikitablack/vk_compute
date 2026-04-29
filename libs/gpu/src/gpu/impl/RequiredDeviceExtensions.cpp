@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 #include <vulkan/vulkan.h>
 
 #include <gpu/impl/RequiredDeviceExtensions.hpp>
@@ -15,10 +15,10 @@ auto RequiredDeviceExtensions::get() noexcept -> std::vector<std::string> {
 }
 
 auto RequiredDeviceExtensions::print() noexcept -> void {
-    fmt::println("required device extensions:");
+    spdlog::info("required device extensions:");
 
     for (auto const& ext : get()) {
-        fmt::println("\t{}", ext);
+        spdlog::info("\t{}", ext);
     }
 }
 

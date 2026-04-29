@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/DeviceBuffer.hpp>
 #include <gpu/GpuManager.hpp>
@@ -78,7 +78,7 @@ auto init_buffer_sync(DeviceBuffer const& deviceBuffer,  //
     auto const guard{::utils::make_scope_guard([&] {
         gpuManager.storageDescriptorSetManager().reset();
         if (auto const r{gpuManager.commandManager().resetCommandBuffer(commandBuffer)}; !r) {
-            fmt::println("{}", r.error());
+            spdlog::warn("{}", r.error());
         }
     })};
 

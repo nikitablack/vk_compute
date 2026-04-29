@@ -108,6 +108,7 @@ target_link_libraries(gpu
         fmt::fmt
         libs::utils
         libs::warnings_as_errors
+        spdlog::spdlog
 )
 
 set_target_properties(gpu

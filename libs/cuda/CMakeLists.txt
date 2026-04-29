@@ -38,6 +38,7 @@ target_link_libraries(cuda
         fmt::fmt
         libs::utils
         libs::warnings_as_errors
+        spdlog::spdlog
 )
 
 set(CUDA_FLAGS --Werror all-warnings)

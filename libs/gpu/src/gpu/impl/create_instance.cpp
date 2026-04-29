@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/RequiredInstanceExtensions.hpp>
 #include <gpu/impl/create_instance.hpp>
@@ -7,7 +7,7 @@
 namespace gpu::impl {
 
 auto create_instance() noexcept -> std::expected<VkInstance, std::string> {
-    fmt::println("creating instance");
+    spdlog::trace("creating instance");
 
     const auto& requiredExtensions{RequiredInstanceExtensions::get()};
 

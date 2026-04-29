@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/RequiredApiVersion.hpp>
 #include <gpu/impl/RequiredDeviceExtensions.hpp>
@@ -45,7 +45,7 @@ namespace gpu::impl {
 [[nodiscard]] auto check_physical_device_support(VkPhysicalDevice device) noexcept -> std::expected<void, std::string> {
     const auto props{get_physical_device_properties(device)};
 
-    fmt::println("checking physical device support: {}", props.properties.deviceName);
+    spdlog::info("checking physical device support: {}", props.properties.deviceName);
 
     // api version
     const uint32_t major{VK_API_VERSION_MAJOR(props.properties.apiVersion)};

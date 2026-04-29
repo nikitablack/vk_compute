@@ -2,7 +2,8 @@
 #include <vk_mem_alloc.h>
 //
 
-#include <fmt/core.h>
+#include <spdlog/cfg/env.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/GpuManager.hpp>
 #include <gpu/impl/RequiredApiVersion.hpp>
@@ -33,6 +34,8 @@ auto GpuManager::init() noexcept -> std::expected<void, std::string> {
     GpuManager& gpuManager{GpuManager::get()};
 
     if (!GpuManager::m_initialized) {
+        spdlog::cfg::load_env_levels();
+
         TRY_EXPECTED_VOID(gpuManager.initialize());
         GpuManager::m_initialized = true;
     }
@@ -57,8 +60,8 @@ auto GpuManager::destroy() noexcept -> void {
 }
 
 auto GpuManager::initialize() noexcept -> std::expected<void, std::string> {
-    fmt::println("initializing gpu manager");
-    fmt::println("minimum supported Vulkan version: {}.{}.0", impl::RequiredApiVersion::MAJOR,
+    spdlog::trace("initializing gpu manager");
+    spdlog::info("minimum supported Vulkan version: {}.{}.0", impl::RequiredApiVersion::MAJOR,
                  impl::RequiredApiVersion::MINOR);
 
     TRY_EXPECTED_VOID(impl::check_instance_version());
@@ -73,7 +76,7 @@ auto GpuManager::initialize() noexcept -> std::expected<void, std::string> {
     TRY_EXPECTED(uint32_t const computeQueueFamily,
                  impl::get_compute_queue_family(m_physicalDevice, REQUIRED_QUEUE_COUNT));
 
-    fmt::println("selected compute queue family: {}", computeQueueFamily);
+    spdlog::info("selected compute queue family: {}", computeQueueFamily);
 
     TRY_EXPECTED(m_device, impl::create_device(m_physicalDevice, computeQueueFamily, REQUIRED_QUEUE_COUNT));
     m_debugUtils.initialize(m_device);
@@ -113,7 +116,7 @@ auto GpuManager::destroyImpl() noexcept -> void {
         return;
     }
 
-    fmt::println("destroying");
+    spdlog::trace("destroying");
 
     flush();
 
@@ -182,14 +185,14 @@ auto GpuManager::getPipeline(std::string const& name,  //
 }
 
 auto GpuManager::flush() const noexcept -> void {
-    fmt::println("flushing");
+    spdlog::trace("flushing");
 
     if (!m_device) {
         return;
     }
 
     if (auto const r{vkDeviceWaitIdle(m_device)}; r != VK_SUCCESS) {
-        fmt::println("failed to synchronize in flush(): {}", static_cast<int32_t>(r));
+        spdlog::warn("failed to synchronize in flush(): {}", static_cast<int32_t>(r));
     }
 }
 

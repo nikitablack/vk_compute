@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/create_descriptor_set_layout.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
@@ -9,7 +9,7 @@ auto create_descriptor_set_layout(VkDevice device,  //
                                   VkDescriptorType descriptorType,  //
                                   uint32_t requiredDescriptorCount  //
                                   ) noexcept -> std::expected<VkDescriptorSetLayout, std::string> {
-    fmt::println("creating descriptor set layout");
+    spdlog::trace("creating descriptor set layout");
 
     VkDescriptorBindingFlags bindingFlags{VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
                                           VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |

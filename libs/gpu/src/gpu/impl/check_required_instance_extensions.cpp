@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 #include <vulkan/vulkan.h>
 
 #include <gpu/impl/RequiredInstanceExtensions.hpp>
@@ -7,7 +7,7 @@
 namespace gpu::impl {
 
 auto check_required_instance_extensions() noexcept -> std::expected<void, std::string> {
-    fmt::println("checking required instance extensions");
+    spdlog::trace("checking required instance extensions");
 
     RequiredInstanceExtensions::print();
 

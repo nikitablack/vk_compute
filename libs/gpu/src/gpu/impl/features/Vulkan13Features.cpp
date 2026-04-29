@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/features/Vulkan13Features.hpp>
 #include <unordered_map>
@@ -43,7 +43,7 @@ auto Vulkan13Features::check(VkPhysicalDevice physicalDevice) const noexcept -> 
     for (auto const& p : featureNameToPtr()) {
         if (features13.*(p.second) == VK_FALSE) {
             result = false;
-            fmt::println("\tVkPhysicalDeviceVulkan13Features::{} is not supported.", p.first);
+            spdlog::info("\tVkPhysicalDeviceVulkan13Features::{} is not supported.", p.first);
         }
     }
 
@@ -51,10 +51,9 @@ auto Vulkan13Features::check(VkPhysicalDevice physicalDevice) const noexcept -> 
 }
 
 auto Vulkan13Features::print() const noexcept -> void {
-    fmt::println("required VkPhysicalDeviceVulkan13Features:");
-
+    spdlog::info("required VkPhysicalDeviceVulkan13Features:");
     for (auto const& p : featureNameToPtr()) {
-        fmt::println("\tVkPhysicalDeviceVulkan13Features::{}", p.first);
+        spdlog::info("\tVkPhysicalDeviceVulkan13Features::{}", p.first);
     }
 }
 

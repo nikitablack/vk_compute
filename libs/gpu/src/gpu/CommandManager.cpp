@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <cassert>
 #include <gpu/CommandManager.hpp>
@@ -14,7 +14,7 @@ uint32_t constexpr NUM_BUFFERS_TO_ALLOCATE_AT_ONCE{10};
 namespace gpu {
 
 auto CommandManager::init(VkDevice device, uint32_t queueFamily) noexcept -> std::expected<void, std::string> {
-    fmt::println("creating command manager");
+    spdlog::trace("creating command manager");
 
     m_device = device;
 
@@ -51,7 +51,7 @@ auto CommandManager::commandBuffer() noexcept -> std::expected<VkCommandBuffer, 
 
     // if there are no available command buffers, allocate NUM_BUFFERS_TO_ALLOCATE_AT_ONCE and keep in a vector
     if (m_availableCommandBuffers.empty()) {
-        fmt::println("allocating {} command buffers", NUM_BUFFERS_TO_ALLOCATE_AT_ONCE);
+        spdlog::info("allocating {} command buffers", NUM_BUFFERS_TO_ALLOCATE_AT_ONCE);
 
         VkCommandBufferAllocateInfo info = vku::InitStructHelper{};
         info.commandPool = m_commandPool;

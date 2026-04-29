@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/get_queue.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
@@ -6,7 +6,7 @@
 namespace gpu::impl {
 
 auto get_queue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex) noexcept -> VkQueue {
-    fmt::println("getting queue");
+    spdlog::trace("getting queue");
 
     VkDeviceQueueInfo2 info = vku::InitStructHelper{};
     info.flags = 0;

@@ -104,48 +104,4 @@ PYBIND11_MODULE(python_kernel, m) {
             throw std::runtime_error(res.error());
         }
     });
-
-    // m.def(
-    //     "add",
-    //     [](py::buffer a, py::buffer b, py::buffer r) {
-    //         using Clock = std::chrono::high_resolution_clock;
-    //         using Duration = std::chrono::duration<double, std::micro>;
-
-    //         auto const aBuf{a.request()};
-    //         auto const bBuf{b.request()};
-    //         auto const rBuf{r.request()};
-
-    //         if (aBuf.ndim != 1 || bBuf.ndim != 1 || rBuf.ndim != 1) {
-    //             throw std::runtime_error("expected 1D arrays");
-    //         }
-
-    //         {
-    //             py::gil_scoped_release release;
-
-    //             auto const* aPtr{static_cast<float const*>(aBuf.ptr)};
-    //             auto const* bPtr{static_cast<float const*>(bBuf.ptr)};
-    //             auto* rPtr{static_cast<float*>(rBuf.ptr)};
-
-    //             // std::span<float const> aSpan(aPtr, aBuf.size);
-    //             // std::span<float const> bSpan(bPtr, bBuf.size);
-    //             // std::span<float> rSpan(rPtr, rBuf.size);
-
-    //             std::vector<float> aHost(aBuf.size);
-    //             std::vector<float> bHost(aBuf.size);
-    //             std::vector<float> resultHost(aBuf.size);
-
-    //             auto const start{Clock::now()};
-
-    //             // if (auto const res{kernel::add(aSpan, bSpan, rSpan)}; !res) {
-    //             //     throw std::runtime_error(res.error());
-    //             // }
-    //             if (auto const res{kernel::add(aHost, bHost, resultHost)}; !res) {
-    //                 throw std::runtime_error(res.error());
-    //             }
-
-    //             std::cout << std::chrono::duration_cast<Duration>(Clock::now() - start).count() << " us" <<
-    //             std::endl;
-    //         }
-    //     },
-    //     py::arg("a"), py::arg("b"), py::arg("result"));
 }

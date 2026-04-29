@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/allocate_descriptor_set.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
@@ -10,7 +10,7 @@ auto allocate_descriptor_set(VkDevice device,  //
                              VkDescriptorSetLayout descriptorSetLayout,  //
                              uint32_t descriptorCount  //
                              ) noexcept -> std::expected<VkDescriptorSet, std::string> {
-    fmt::println("allocating descriptor set");
+    spdlog::trace("allocating descriptor set");
 
     VkDescriptorSetVariableDescriptorCountAllocateInfo allocateInfo = vku::InitStructHelper{};
     allocateInfo.descriptorSetCount = 1;

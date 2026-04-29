@@ -1,5 +1,5 @@
 
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/RequiredApiVersion.hpp>
 #include <gpu/impl/create_allocator.hpp>
@@ -10,7 +10,7 @@ auto create_allocator(VkInstance instance,  //
                       VkPhysicalDevice physicalDevice,  //
                       VkDevice device  //
                       ) noexcept -> std::expected<VmaAllocator, std::string> {
-    fmt::println("creating vma allocator");
+    spdlog::trace("creating vma allocator");
 
     VmaAllocatorCreateInfo info{};
     info.flags = VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT;  // for VkBufferUsageFlags2

@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/features/RequiredFeatures.hpp>
 #include <gpu/impl/features/Vulkan12Features.hpp>
@@ -32,10 +32,9 @@ RequiredFeatures::RequiredFeatures() noexcept {
 }
 
 auto RequiredFeatures::printImpl() const noexcept -> void {
-    fmt::println("required VkPhysicalDeviceFeatures2:");
-
+    spdlog::info("required VkPhysicalDeviceFeatures2:");
     for (auto const& p : featureNameToPtr()) {
-        fmt::println("\tVkPhysicalDeviceFeatures2::{}", p.first);
+        spdlog::info("\tVkPhysicalDeviceFeatures2::{}", p.first);
     }
 
     for (auto const& f : m_features) {
@@ -53,7 +52,7 @@ auto RequiredFeatures::checkImpl(VkPhysicalDevice physicalDevice) const noexcept
     for (auto const& p : featureNameToPtr()) {
         if (features.features.*(p.second) == VK_FALSE) {
             result = false;
-            fmt::println("\tVkPhysicalDeviceFeatures2::{} is not supported.", p.first);
+            spdlog::info("\tVkPhysicalDeviceFeatures2::{} is not supported.", p.first);
         }
     }
 

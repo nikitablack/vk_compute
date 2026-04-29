@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/get_compute_queue_family.hpp>
 #include <vector>
@@ -7,7 +7,7 @@ namespace gpu::impl {
 
 auto get_compute_queue_family(VkPhysicalDevice device, uint32_t requiredQueueCount) noexcept
     -> std::expected<uint32_t, std::string> {
-    fmt::println("getting compute queue family");
+    spdlog::trace("getting compute queue family");
 
     uint32_t queueFamilyCount{0};
     vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamilyCount, nullptr);

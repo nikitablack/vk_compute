@@ -29,11 +29,12 @@ target_link_libraries(kernel
     PUBLIC
         libs::gpu
     PRIVATE
+        dl # for renderdoc
         fmt::fmt
         libs::utils
         libs::warnings_as_errors
+        spdlog::spdlog
         ${kernel_shaders}
-        dl # for renderdoc
 )
 
 set_target_properties(kernel

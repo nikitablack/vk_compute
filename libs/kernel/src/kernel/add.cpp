@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/GpuManager.hpp>
 #include <gpu/utils/get_push_constant_data.hpp>
@@ -160,7 +160,7 @@ auto add(gpu::DeviceBuffer const& a,  //
         auto const guard{::utils::make_scope_guard([&] {
             gpuManager.storageDescriptorSetManager().reset();
             if (auto const r{gpuManager.commandManager().resetCommandBuffer(commandBuffer)}; !r) {
-                fmt::println("{}", r.error());
+                spdlog::warn("{}", r.error());
             }
         })};
 

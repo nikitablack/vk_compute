@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 #include <vulkan/vulkan.h>
 
 #include <gpu/impl/RequiredApiVersion.hpp>
@@ -7,7 +7,7 @@
 namespace gpu::impl {
 
 auto check_instance_version() noexcept -> std::expected<void, std::string> {
-    fmt::println("checking instance version");
+    spdlog::trace("checking instance version");
 
     auto const f{
         reinterpret_cast<PFN_vkEnumerateInstanceVersion>(vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion"))};
@@ -30,7 +30,7 @@ auto check_instance_version() noexcept -> std::expected<void, std::string> {
         return std::unexpected{fmt::format("error: detected Vulkan version: {}.{}.{}", major, minor, patch)};
     }
 
-    fmt::println("Vulkan version: {}.{}.{}", major, minor, patch);
+    spdlog::info("Vulkan version: {}.{}.{}", major, minor, patch);
 
     return {};
 }

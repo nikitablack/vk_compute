@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <cuda/add.hpp>
 #include <cuda/utils/check_error.hpp>
@@ -32,19 +32,19 @@ struct DeviceData {
     ~DeviceData() {
         if (a) {
             if (cudaFree(a) != cudaSuccess) {
-                fmt::println("failed to free cuda memory");
+                spdlog::warn("failed to free cuda memory");
             }
         }
 
         if (b) {
             if (cudaFree(b) != cudaSuccess) {
-                fmt::println("failed to free cuda memory");
+                spdlog::warn("failed to free cuda memory");
             }
         }
 
         if (result) {
             if (cudaFree(result) != cudaSuccess) {
-                fmt::println("failed to free cuda memory");
+                spdlog::warn("failed to free cuda memory");
             }
         }
     }

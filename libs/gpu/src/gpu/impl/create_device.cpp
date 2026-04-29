@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <gpu/impl/RequiredDeviceExtensions.hpp>
@@ -12,7 +12,7 @@ auto create_device(VkPhysicalDevice physicalDevice,  //
                    uint32_t queueFamily,  //
                    uint32_t queueCount  //
                    ) noexcept -> std::expected<VkDevice, std::string> {
-    fmt::println("creating device");
+    spdlog::trace("creating device");
 
     // priorities
     std::vector<float> queuePriorities(queueCount);

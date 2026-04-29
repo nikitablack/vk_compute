@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/VulkanFunctions.hpp>
 #include <utils/try_expected.hpp>
@@ -24,7 +24,7 @@ namespace gpu {
 PFN_vkSetDebugUtilsObjectNameEXT VulkanFunctions::vkSetDebugUtilsObjectNameEXT{VK_NULL_HANDLE};
 
 auto VulkanFunctions::initialize(VkInstance instance) noexcept -> std::expected<void, std::string> {
-    fmt::println("initializing Vulkan functions");
+    spdlog::trace("initializing Vulkan functions");
 
     // debug utils
     TRY_EXPECTED(vkSetDebugUtilsObjectNameEXT,

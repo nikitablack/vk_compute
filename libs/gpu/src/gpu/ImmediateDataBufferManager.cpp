@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <cstring>
 #include <glm/gtc/type_ptr.hpp>
@@ -80,7 +80,7 @@ auto ImmediateDataBufferManager::pushDataImpl(std::span<std::byte const> data  /
     if (occupancyInfo == nullptr) {
         VkDeviceSize newSize{std::max(data.size(), DEFAULT_BUFFER_SIZE)};
 
-        fmt::println("allocating new immediate buffer with the size {}", newSize);
+        spdlog::info("allocating new immediate buffer with the size {}", newSize);
 
         HostVisibleBuffer buffer{};
         TRY_EXPECTED_VOID(buffer.init(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,  //

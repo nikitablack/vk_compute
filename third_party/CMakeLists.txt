@@ -1,4 +1,5 @@
 add_subdirectory(cmakerc SYSTEM)
 add_subdirectory(fmt SYSTEM)
 add_subdirectory(renderdoc SYSTEM)
+add_subdirectory(spdlog SYSTEM)
 add_subdirectory(vma SYSTEM)

@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <array>
 #include <gpu/impl/create_pipeline_layout.hpp>
@@ -9,7 +9,7 @@ namespace gpu::impl {
 auto create_pipeline_layout(VkDevice device,  //
                             VkDescriptorSetLayout storageDescriptorSetLayout  //
                             ) noexcept -> std::expected<VkPipelineLayout, std::string> {
-    fmt::println("creating pipeline layout");
+    spdlog::trace("creating pipeline layout");
 
     VkPushConstantRange pushConstantRange{};
     pushConstantRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;

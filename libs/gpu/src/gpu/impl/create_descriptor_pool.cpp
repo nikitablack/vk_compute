@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <gpu/impl/allocate_descriptor_set.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
@@ -9,7 +9,7 @@ auto create_descriptor_pool(VkDevice device,  //
                             VkDescriptorType descriptorType,  //
                             uint32_t descriptorCount  //
                             ) noexcept -> std::expected<VkDescriptorPool, std::string> {
-    fmt::println("creating descriptor pool");
+    spdlog::trace("creating descriptor pool");
 
     VkDescriptorPoolSize poolSize{};
     poolSize.type = descriptorType;
