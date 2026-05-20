@@ -2,6 +2,7 @@
 
 #include <gpu/impl/get_compute_queue_family.hpp>
 #include <vector>
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace gpu::impl {
 
@@ -14,7 +15,7 @@ auto get_compute_queue_family(VkPhysicalDevice device, uint32_t requiredQueueCou
 
     std::vector<VkQueueFamilyProperties2> queueFamilies(queueFamilyCount);
     for (size_t i{0}; i < queueFamilies.size(); ++i) {
-        queueFamilies[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
+        queueFamilies[i] = vku::InitStructHelper{};
     }
 
     vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamilyCount, queueFamilies.data());

@@ -54,46 +54,48 @@ struct DeviceData {
 
 namespace cuda {
 
-auto add(std::span<float const> aHost,  //
-         std::span<float const> bHost,  //
-         std::span<float> resultHost  //
-         ) noexcept -> std::optional<std::string> {
-    // special case
-    if (aHost.size() == 0) {
-        return {};
-    }
+// auto add(std::span<float const> aHost,  //
+//          std::span<float const> bHost,  //
+//          std::span<float> resultHost  //
+//          ) noexcept -> std::optional<std::string> {
+//     // special case
+//     if (aHost.size() == 0) {
+//         return {};
+//     }
 
-    // input validation
-    if ((aHost.size() != bHost.size()) || (aHost.size() != resultHost.size())) {
-        return std::optional("input data size mismatch");
-    }
+//     // input validation
+//     if ((aHost.size() != bHost.size()) || (aHost.size() != resultHost.size())) {
+//         return std::optional("input data size mismatch");
+//     }
 
-    uint32_t const dataSizeBytes{static_cast<uint32_t>(aHost.size_bytes())};
+//     uint32_t const dataSizeBytes{static_cast<uint32_t>(aHost.size_bytes())};
 
-    DeviceData deviceData{};
+//     DeviceData deviceData{};
 
-    CHECK_ERROR_OPT(cudaMalloc(&deviceData.a, dataSizeBytes));
-    CHECK_ERROR_OPT(cudaMalloc(&deviceData.b, dataSizeBytes));
-    CHECK_ERROR_OPT(cudaMalloc(&deviceData.result, dataSizeBytes));
+//     CHECK_ERROR_OPT(cudaMalloc(&deviceData.a, dataSizeBytes));
+//     CHECK_ERROR_OPT(cudaMalloc(&deviceData.b, dataSizeBytes));
+//     CHECK_ERROR_OPT(cudaMalloc(&deviceData.result, dataSizeBytes));
 
-    CHECK_ERROR_OPT(cudaMemcpy(deviceData.a, aHost.data(), dataSizeBytes, cudaMemcpyHostToDevice));
-    CHECK_ERROR_OPT(cudaMemcpy(deviceData.b, bHost.data(), dataSizeBytes, cudaMemcpyHostToDevice));
+//     CHECK_ERROR_OPT(cudaMemcpy(deviceData.a, aHost.data(), dataSizeBytes, cudaMemcpyHostToDevice));
+//     CHECK_ERROR_OPT(cudaMemcpy(deviceData.b, bHost.data(), dataSizeBytes, cudaMemcpyHostToDevice));
 
-    TRY_OPTIONAL(add(deviceData.a, deviceData.b, deviceData.result, dataSizeBytes));
+//     TRY_OPTIONAL(add(deviceData.a, deviceData.b, deviceData.result, dataSizeBytes));
 
-    CHECK_ERROR_OPT(cudaMemcpy(resultHost.data(), deviceData.result, dataSizeBytes, cudaMemcpyDeviceToHost));
+//     CHECK_ERROR_OPT(cudaMemcpy(resultHost.data(), deviceData.result, dataSizeBytes, cudaMemcpyDeviceToHost));
 
-    return std::nullopt;
-}
+//     return std::nullopt;
+// }
 
-auto add(float const* aDevice,  //
-         float const* bDevice,  //
-         float* resultDevice,  //
-         size_t sizeBytes  //
-         ) noexcept -> std::optional<std::string> {
+auto matmul(float const* aDevice,  //
+            float const* bDevice,  //
+            float* resultDevice,  //
+            uint32_t M,  //
+            uint32_t N,  //
+            uint32_t K  //
+            ) noexcept -> std::optional<std::string> {
     using T = float;
 
-    if (sizeBytes == 0) {
+    if ((M == 0) || (N == 0) || (K == 0)) {
         return {};
     }
 

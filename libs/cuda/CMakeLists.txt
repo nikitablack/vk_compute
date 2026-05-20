@@ -13,15 +13,20 @@ add_library(libs::cuda
 
 target_sources(cuda
     PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/cuda/utils/check_error.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/cuda/utils/constants.hpp
+
         ${CMAKE_CURRENT_SOURCE_DIR}/include/cuda/add.hpp
 
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/cuda/utils/check_error.hpp
-
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/add.cu
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/impl/add.cu
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/impl/add.hpp
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/add.cpp
 )
 
 target_include_directories(cuda PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(cuda PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 set_target_properties(cuda PROPERTIES
     CXX_STANDARD 23

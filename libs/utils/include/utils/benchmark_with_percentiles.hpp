@@ -8,6 +8,7 @@
 #include <expected>
 #include <functional>
 #include <string>
+#include <utility>
 #include <utils/try_expected.hpp>
 
 namespace utils {
@@ -15,7 +16,7 @@ namespace utils {
 [[nodiscard]] auto benchmark_with_percentiles(std::function<std::expected<void, std::string>()> const& fn,  //
                                               uint32_t runs = 100,  //
                                               uint32_t percentileCount = 10  //
-                                              ) -> std::expected<void, std::string> {
+                                              ) -> std::expected<std::vector<std::pair<float, double>>, std::string> {
     if (runs == 0) {
         return std::unexpected{"incorrect number of runs"};
     }
@@ -42,22 +43,17 @@ namespace utils {
     // Sort samples
     std::sort(samples.begin(), samples.end());
 
-    // Print results
-    fmt::println("runs: {}", runs);
-
+    std::vector<std::pair<float, double>> percentiles{};
+    percentiles.reserve(percentileCount);
     for (size_t i{1}; i <= percentileCount; ++i) {
         double const p{(100.0 * static_cast<double>(i)) / static_cast<double>(percentileCount)};
         auto const index{static_cast<size_t>((p / 100.0) * static_cast<double>(runs - size_t{1}))};
         double const value{samples[index]};
 
-        fmt::print("p{:5.1f}: {:.2f} us\n", p, value);
+        percentiles.emplace_back(static_cast<float>(p), value);
     }
 
-    // Optional: min / max
-    fmt::println("min: {:.2f} us", samples.front());
-    fmt::println("max: {:.2f} us", samples.back());
-
-    return {};
+    return percentiles;
 }
 
 }  // namespace utils
