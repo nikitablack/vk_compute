@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 
-project(cuda_add LANGUAGES CXX CUDA)
+project(cuda_add_chunked LANGUAGES CXX CUDA)
 
 add_executable(${PROJECT_NAME})
 
 target_sources(${PROJECT_NAME}
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/add.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/add_chunked.cpp
 )
 
 target_include_directories(${PROJECT_NAME}

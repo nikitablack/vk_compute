@@ -14,23 +14,23 @@
 
 namespace {
 
-template <cuda::utils::ItCount IT_COUNT>
+template <cuda::utils::ChunkSize CHUNK_SIZE>
 [[nodiscard]] auto run_benchmark(float const* aDevice,  //
                                  float const* bDevice,  //
                                  float* resultDevice,  //
                                  size_t sizeBytes  //
                                  ) noexcept -> std::expected<void, std::string> {
     for (uint32_t blockSizeX{64}; blockSizeX <= 1024; blockSizeX *= 2) {
-        fmt::println("IT_COUNT: {}, BLOCK_SIZE_X: {}", static_cast<uint32_t>(IT_COUNT), blockSizeX);
+        fmt::println("chunkSize: {}, blockSizeX: {}", static_cast<uint32_t>(CHUNK_SIZE), blockSizeX);
 
         TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles(
                                                  [&]() -> std::expected<void, std::string> {
-                                                     TRY_EXPECTED_VOID(cuda::add(aDevice,  //
-                                                                                 bDevice,  //
-                                                                                 resultDevice,  //
-                                                                                 sizeBytes,  //
-                                                                                 blockSizeX,  //
-                                                                                 IT_COUNT));
+                                                     TRY_EXPECTED_VOID(cuda::add_chunked(aDevice,  //
+                                                                                         bDevice,  //
+                                                                                         resultDevice,  //
+                                                                                         sizeBytes,  //
+                                                                                         blockSizeX,  //
+                                                                                         CHUNK_SIZE));
                                                      return {};
                                                  },
                                                  100));
@@ -78,17 +78,17 @@ auto main_impl() noexcept -> std::expected<void, std::string> {
     }
 
     // compute
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_1>(aDevice, bDevice, resultDevice, S));
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_2>(aDevice, bDevice, resultDevice, S));
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_4>(aDevice, bDevice, resultDevice, S));
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_8>(aDevice, bDevice, resultDevice, S));
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_16>(aDevice, bDevice, resultDevice, S));
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_32>(aDevice, bDevice, resultDevice, S));
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_64>(aDevice, bDevice, resultDevice, S));
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_128>(aDevice, bDevice, resultDevice, S));
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_256>(aDevice, bDevice, resultDevice, S));
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_512>(aDevice, bDevice, resultDevice, S));
-    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ItCount::IT_1024>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_1>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_2>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_4>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_8>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_16>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_32>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_64>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_128>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_256>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_512>(aDevice, bDevice, resultDevice, S));
+    TRY_EXPECTED_VOID(run_benchmark<cuda::utils::ChunkSize::C_1024>(aDevice, bDevice, resultDevice, S));
 
     // read result
     std::vector<float> resultHost(N);

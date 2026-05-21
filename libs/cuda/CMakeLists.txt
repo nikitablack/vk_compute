@@ -19,6 +19,12 @@ target_sources(cuda
         ${CMAKE_CURRENT_SOURCE_DIR}/include/cuda/add.hpp
 
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/impl/add_chunked.cu
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/impl/add_chunked.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/impl/add_data.cu
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/impl/add_data.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/impl/add_v4.cu
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/impl/add_v4.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/impl/add.cu
         ${CMAKE_CURRENT_SOURCE_DIR}/src/cuda/impl/add.hpp
 

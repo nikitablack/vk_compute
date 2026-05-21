@@ -13,7 +13,7 @@ set_target_properties(cuda_tests
 
 target_sources(cuda_tests
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/test_add.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_add_chunked.cpp
 )
 
 target_link_libraries(cuda_tests

@@ -48,7 +48,6 @@ addCompileShadersCommand(TARGET_NAME ${kernel_shaders}
     OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders
     SHADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/add.comp
-    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/add_v.comp
 )
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
