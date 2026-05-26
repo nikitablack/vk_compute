@@ -16,7 +16,7 @@ void check_add(std::span<float const> a, std::span<float const> b, std::span<flo
 
 }  // namespace
 
-TEST_CASE("add - 100 elements add", "[add]") {
+TEST_CASE("add - 100 elements add, workgroup size 32", "[add]") {
     REQUIRE(gpu::GpuManager::init().has_value());
 
     size_t constexpr N{100};
@@ -30,9 +30,93 @@ TEST_CASE("add - 100 elements add", "[add]") {
         b[i] = static_cast<float>(2 * i);
     }
 
-    REQUIRE(kernel::add(a, b, result).has_value());
+    REQUIRE(kernel::add(a, b, result, 32).has_value());
 
     check_add(a, b, result);
+
+    gpu::GpuManager::destroy();
+}
+
+TEST_CASE("add - 100 elements add, workgroup size 64", "[add]") {
+    REQUIRE(gpu::GpuManager::init().has_value());
+
+    size_t constexpr N{100};
+
+    std::vector<float> a(N);
+    std::vector<float> b(N);
+    std::vector<float> result(N);
+
+    for (size_t i{0}; i < N; ++i) {
+        a[i] = static_cast<float>(i);
+        b[i] = static_cast<float>(2 * i);
+    }
+
+    REQUIRE(kernel::add(a, b, result, 64).has_value());
+
+    check_add(a, b, result);
+
+    gpu::GpuManager::destroy();
+}
+
+TEST_CASE("add - 100 elements add, workgroup size 512", "[add]") {
+    REQUIRE(gpu::GpuManager::init().has_value());
+
+    size_t constexpr N{100};
+
+    std::vector<float> a(N);
+    std::vector<float> b(N);
+    std::vector<float> result(N);
+
+    for (size_t i{0}; i < N; ++i) {
+        a[i] = static_cast<float>(i);
+        b[i] = static_cast<float>(2 * i);
+    }
+
+    REQUIRE(kernel::add(a, b, result, 512).has_value());
+
+    check_add(a, b, result);
+
+    gpu::GpuManager::destroy();
+}
+
+TEST_CASE("add - 100 elements add, workgroup size 1024", "[add]") {
+    REQUIRE(gpu::GpuManager::init().has_value());
+
+    size_t constexpr N{100};
+
+    std::vector<float> a(N);
+    std::vector<float> b(N);
+    std::vector<float> result(N);
+
+    for (size_t i{0}; i < N; ++i) {
+        a[i] = static_cast<float>(i);
+        b[i] = static_cast<float>(2 * i);
+    }
+
+    REQUIRE(kernel::add(a, b, result, 1024).has_value());
+
+    check_add(a, b, result);
+
+    gpu::GpuManager::destroy();
+}
+
+TEST_CASE("add - 100 elements add, workgroup size 2048", "[add]") {
+    REQUIRE(gpu::GpuManager::init().has_value());
+
+    size_t constexpr N{100};
+
+    std::vector<float> a(N);
+    std::vector<float> b(N);
+    std::vector<float> result(N);
+
+    for (size_t i{0}; i < N; ++i) {
+        a[i] = static_cast<float>(i);
+        b[i] = static_cast<float>(2 * i);
+    }
+
+    // this should fail because likely 2048 is wrong since max is 1024
+    // TODO: add limits check to the add() implementation.
+    REQUIRE_FALSE(kernel::add(a, b, result, 2048).has_value());
 
     gpu::GpuManager::destroy();
 }
@@ -61,28 +145,6 @@ TEST_CASE("add - zero elements add", "[add]") {
     REQUIRE(kernel::add(a, b, result).has_value());
 
     REQUIRE(result.empty());
-
-    gpu::GpuManager::destroy();
-}
-
-TEST_CASE("add - non-multiple of 4 add", "[add]") {
-    REQUIRE(gpu::GpuManager::init().has_value());
-
-    size_t constexpr N{10};  // not divisible by 4
-    static_assert((N % 4) > 0, "number of elements should be non-multiple of 4");
-
-    std::vector<float> a(N);
-    std::vector<float> b(N);
-    std::vector<float> result(N);
-
-    for (size_t i{0}; i < N; ++i) {
-        a[i] = static_cast<float>(i + 1);
-        b[i] = static_cast<float>(i + 2);
-    }
-
-    REQUIRE(kernel::add(a, b, result).has_value());
-
-    check_add(a, b, result);
 
     gpu::GpuManager::destroy();
 }

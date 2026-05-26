@@ -78,10 +78,14 @@ auto main_impl() -> std::expected<void, std::string> {
     }
 
     // compute
-    TRY_EXPECTED_VOID(utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
-        TRY_EXPECTED_VOID(kernel::add(aDevice, bDevice, resultDevice));
-        return {};
-    }));
+    TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
+                     TRY_EXPECTED_VOID(kernel::add(aDevice, bDevice, resultDevice, 256));
+                     return {};
+                 }));
+
+    for (auto const& p : percentiles) {
+        fmt::print("p{:5.1f}: {:.2f} us\n", p.first, p.second);
+    }
 
     // read result
     std::vector<float> resultHost(N);

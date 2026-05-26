@@ -216,12 +216,12 @@ auto GpuManager::device() const noexcept -> VkDevice {
     return m_device;
 }
 
-// auto GraphicsManager::immediateDataBufferManager() noexcept -> ImmediateDataBufferManager& {
-//     return m_immediateDataBufferManager;
-// }
-
 auto GpuManager::pipelineLayout() const noexcept -> VkPipelineLayout {
     return m_pipelineLayout;
+}
+
+auto GpuManager::physicalDeviceProperties() const noexcept -> VkPhysicalDeviceProperties2 const& {
+    return m_physicalDeviceProperties;
 }
 
 auto GpuManager::storageDescriptorSetManager() noexcept -> StorageDescriptorSetManager& {

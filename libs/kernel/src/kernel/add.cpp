@@ -35,7 +35,8 @@ namespace kernel {
 
 auto add(std::span<float const> a,  //
          std::span<float const> b,  //
-         std::span<float> result  //
+         std::span<float> result,  //
+         uint32_t workgroupSizeX  //
          ) noexcept -> std::expected<void, std::string> {
     // special case
     if (a.size() == 0) {
@@ -66,7 +67,7 @@ auto add(std::span<float const> a,  //
     }
 
     // run compute
-    TRY_EXPECTED_VOID(add(deviceData.a, deviceData.b, deviceData.result, dataSizeBytes));
+    TRY_EXPECTED_VOID(add(deviceData.a, deviceData.b, deviceData.result, workgroupSizeX, dataSizeBytes));
 
     // read back
     {
@@ -82,16 +83,21 @@ auto add(std::span<float const> a,  //
 auto add(gpu::DeviceBuffer const& a,  //
          gpu::DeviceBuffer const& b,  //
          gpu::DeviceBuffer const& result,  //
+         uint32_t workgroupSizeX,  //
          std::optional<uint64_t> sizeBytes  //
          ) noexcept -> std::expected<void, std::string> {
     if (!gpu::GpuManager::initialized()) {
         return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
     }
 
-    using T = float;
+    auto const& limits{gpu::GpuManager::get().physicalDeviceProperties().properties.limits};
+    if (workgroupSizeX > limits.maxComputeWorkGroupSize[0]) {
+        return std::unexpected{
+            fmt::format("provided workgroupSizeX ({}) exceeds the maximum compute work group size ({})", workgroupSizeX,
+                        limits.maxComputeWorkGroupSize[0])};
+    }
 
     uint64_t dataSizeBytes{0};
-    uint32_t dataCount{0};
 
     // input validation
     {
@@ -118,36 +124,35 @@ auto add(gpu::DeviceBuffer const& a,  //
             }
         }
 
-        if ((dataSizeBytes % sizeof(T)) != 0) {
-            return std::unexpected("input size should be multiple of T");
+        if ((dataSizeBytes % sizeof(float)) != 0) {
+            return std::unexpected("input size should be multiple of sizeof(float)");
         }
-
-        dataCount = static_cast<uint32_t>(dataSizeBytes / sizeof(T));
     }
 
-    uint32_t constexpr WORKGROUP_SIZE_X{1024};
+    uint32_t const n{static_cast<uint32_t>(dataSizeBytes / sizeof(float))};
+
     uint32_t constexpr WORKGROUP_SIZE_Y{1};
     uint32_t constexpr WORKGROUP_SIZE_Z{1};
-    uint32_t constexpr WORKGROUP_SIZE{WORKGROUP_SIZE_X * WORKGROUP_SIZE_Y * WORKGROUP_SIZE_Z};
+    // uint32_t constexpr WORKGROUP_SIZE{WORKGROUP_SIZE_X * WORKGROUP_SIZE_Y * WORKGROUP_SIZE_Z};
 
     gpu::GpuManager& gpuManager{gpu::GpuManager::get()};
     VkPipeline vkPipeline{VK_NULL_HANDLE};
 
     if (auto p{gpuManager.getPipeline(KERNEL_NAME,  //
-                                      WORKGROUP_SIZE_X,  //
+                                      workgroupSizeX,  //
                                       WORKGROUP_SIZE_Y,  //
                                       WORKGROUP_SIZE_Z)}) {
         vkPipeline = *p;
     } else {
         TRY_EXPECTED(vkPipeline, utils::create_pipeline(KERNEL_NAME,  //
-                                                        WORKGROUP_SIZE_X,  //
+                                                        workgroupSizeX,  //
                                                         WORKGROUP_SIZE_Y,  //
                                                         WORKGROUP_SIZE_Z));
 
         // cache the pipeline
         gpuManager.addPipeline(vkPipeline,  //
                                KERNEL_NAME,  //
-                               WORKGROUP_SIZE_X,  //
+                               workgroupSizeX,  //
                                WORKGROUP_SIZE_Y,  //
                                WORKGROUP_SIZE_Z);
     }
@@ -185,7 +190,7 @@ auto add(gpu::DeviceBuffer const& a,  //
                          gpuManager.storageDescriptorSetManager().push(commandBuffer, bufferInfo));
 
             // see add.comp
-            auto const pushConstData{gpu::utils::get_push_constant_data(dataCount,  //
+            auto const pushConstData{gpu::utils::get_push_constant_data(n,  //
                                                                         descriptorIndexA,  //
                                                                         descriptorIndexB,  //
                                                                         descriptorIndexOut)};
@@ -201,8 +206,11 @@ auto add(gpu::DeviceBuffer const& a,  //
         // dispatch and wait
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline);
 
-        uint32_t const numGroupsX{(dataCount + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE};
-        vkCmdDispatch(commandBuffer, numGroupsX, 1, 1);
+        uint32_t const groupCountX{(n + workgroupSizeX - 1) / workgroupSizeX};
+        uint32_t constexpr GROUP_COUNT_Y{1};
+        uint32_t constexpr GROUP_COUNT_Z{1};
+
+        vkCmdDispatch(commandBuffer, groupCountX, GROUP_COUNT_Y, GROUP_COUNT_Z);
 
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
             return std::unexpected{"failed to end copy command buffer"};

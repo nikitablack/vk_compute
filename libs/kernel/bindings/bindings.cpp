@@ -1,5 +1,6 @@
 // #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include <chrono>
 #include <gpu/DeviceBuffer.hpp>
@@ -36,6 +37,20 @@ private:
 };
 
 static DeviceBufferRegistry bufferRegistry;
+
+auto add_impl(DeviceBufferHandle a,  //
+              DeviceBufferHandle b,  //
+              DeviceBufferHandle result,  //
+              uint32_t workgroupSizeX,  //
+              std::optional<size_t> sizeBytes) -> void {
+    gpu::DeviceBuffer const& aDevice{bufferRegistry.get(a)};
+    gpu::DeviceBuffer const& bDevice{bufferRegistry.get(b)};
+    gpu::DeviceBuffer const& resultDevice{bufferRegistry.get(result)};
+
+    if (auto const res{kernel::add(aDevice, bDevice, resultDevice, workgroupSizeX, sizeBytes)}; !res) {
+        throw std::runtime_error(res.error());
+    }
+}
 
 }  // namespace
 
@@ -95,13 +110,11 @@ PYBIND11_MODULE(python_kernel, m) {
 
     m.def("clear", []() { gpu::GpuManager::destroy(); });
 
-    m.def("add", [](DeviceBufferHandle a, DeviceBufferHandle b, DeviceBufferHandle result) {
-        gpu::DeviceBuffer const& aDevice{bufferRegistry.get(a)};
-        gpu::DeviceBuffer const& bDevice{bufferRegistry.get(b)};
-        gpu::DeviceBuffer const& resultDevice{bufferRegistry.get(result)};
-
-        if (auto const res{kernel::add(aDevice, bDevice, resultDevice)}; !res) {
-            throw std::runtime_error(res.error());
-        }
-    });
+    m.def("add",  //
+          &add_impl,  //
+          py::arg("a"),  //
+          py::arg("b"),  //
+          py::arg("result"),  //
+          py::arg("workgroupSizeX") = 128,  //
+          py::arg_v("sizeBytes", std::nullopt, "None"));
 }

@@ -83,8 +83,8 @@ public:
     auto computeQueue() const noexcept -> VulkanQueue;
     // auto debugUtils() const noexcept -> VulkanDebugUtils const&;
     auto device() const noexcept -> VkDevice;
-    // auto immediateDataBufferManager() noexcept -> ImmediateDataBufferManager&;
     auto pipelineLayout() const noexcept -> VkPipelineLayout;
+    auto physicalDeviceProperties() const noexcept -> VkPhysicalDeviceProperties2 const&;
     auto storageDescriptorSetManager() noexcept -> StorageDescriptorSetManager&;
 
 private:

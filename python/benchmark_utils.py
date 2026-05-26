@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 
 def benchmark_with_percentiles(
-    fn: Callable[[], None], runs: int = 100, percentile_count: int = 10
+    fn: Callable[[], None], runs: int = 1000, percentile_count: int = 10
 ) -> list[float]:
     if runs <= 0:
         raise ValueError("incorrect number of runs")
