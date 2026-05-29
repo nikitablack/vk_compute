@@ -1,5 +1,6 @@
 #include <gpu/DeviceBuffer.hpp>
 #include <gpu/GpuManager.hpp>
+#include <utils/try_expected.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace gpu {
@@ -7,9 +8,7 @@ namespace gpu {
 auto DeviceBuffer::init(size_t size,  //
                         VkBufferUsageFlags2 usageFlags  //
                         ) noexcept -> std::expected<void, std::string> {
-    if (!GpuManager::initialized()) {
-        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
-    }
+    TRY_EXPECTED_REF(auto& gpuManager, GpuManager::get());
 
     m_size = size;
 
@@ -34,7 +33,7 @@ auto DeviceBuffer::init(size_t size,  //
     allocationCreateInfo.pUserData = nullptr;
 
     VmaAllocationInfo allocationInfo{};
-    if (vmaCreateBuffer(GpuManager::get().allocator(),  //
+    if (vmaCreateBuffer(gpuManager.allocator(),  //
                         &bufferCreateInfo,  //
                         &allocationCreateInfo,  //
                         &m_buffer,  //
@@ -51,7 +50,15 @@ auto DeviceBuffer::destroy() noexcept -> void {
         return;
     }
 
-    vmaDestroyBuffer(GpuManager::get().allocator(), m_buffer, m_allocation);
+    auto result{GpuManager::get()};
+    // should never happen, since if m_buffer exists meanss GpuManager is initizlized
+    if (!result) {
+        return;
+    }
+
+    auto& gpuManager{result.value().get()};
+
+    vmaDestroyBuffer(gpuManager.allocator(), m_buffer, m_allocation);
 
     m_allocation = VK_NULL_HANDLE;
     m_buffer = VK_NULL_HANDLE;

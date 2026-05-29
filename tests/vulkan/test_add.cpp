@@ -17,8 +17,6 @@ void check_add(std::span<float const> a, std::span<float const> b, std::span<flo
 }  // namespace
 
 TEST_CASE("add - 100 elements add, workgroup size 32", "[add]") {
-    REQUIRE(gpu::GpuManager::init().has_value());
-
     size_t constexpr N{100};
 
     std::vector<float> a(N);
@@ -38,8 +36,6 @@ TEST_CASE("add - 100 elements add, workgroup size 32", "[add]") {
 }
 
 TEST_CASE("add - 100 elements add, workgroup size 64", "[add]") {
-    REQUIRE(gpu::GpuManager::init().has_value());
-
     size_t constexpr N{100};
 
     std::vector<float> a(N);
@@ -59,8 +55,6 @@ TEST_CASE("add - 100 elements add, workgroup size 64", "[add]") {
 }
 
 TEST_CASE("add - 100 elements add, workgroup size 512", "[add]") {
-    REQUIRE(gpu::GpuManager::init().has_value());
-
     size_t constexpr N{100};
 
     std::vector<float> a(N);
@@ -80,8 +74,6 @@ TEST_CASE("add - 100 elements add, workgroup size 512", "[add]") {
 }
 
 TEST_CASE("add - 100 elements add, workgroup size 1024", "[add]") {
-    REQUIRE(gpu::GpuManager::init().has_value());
-
     size_t constexpr N{100};
 
     std::vector<float> a(N);
@@ -101,8 +93,6 @@ TEST_CASE("add - 100 elements add, workgroup size 1024", "[add]") {
 }
 
 TEST_CASE("add - 100 elements add, workgroup size 2048", "[add]") {
-    REQUIRE(gpu::GpuManager::init().has_value());
-
     size_t constexpr N{100};
 
     std::vector<float> a(N);
@@ -122,8 +112,6 @@ TEST_CASE("add - 100 elements add, workgroup size 2048", "[add]") {
 }
 
 TEST_CASE("add - single element add", "[add]") {
-    REQUIRE(gpu::GpuManager::init().has_value());
-
     std::vector<float> a{1.5f};
     std::vector<float> b{2.5f};
     std::vector<float> result(1);
@@ -136,8 +124,6 @@ TEST_CASE("add - single element add", "[add]") {
 }
 
 TEST_CASE("add - zero elements add", "[add]") {
-    REQUIRE(gpu::GpuManager::init().has_value());
-
     std::vector<float> a{};
     std::vector<float> b{};
     std::vector<float> result{};

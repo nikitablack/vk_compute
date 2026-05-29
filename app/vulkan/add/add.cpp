@@ -26,8 +26,6 @@
 namespace {
 
 auto main_impl() -> std::expected<void, std::string> {
-    TRY_EXPECTED_VOID(gpu::GpuManager::init());
-
     uint32_t constexpr N{1024 * 1024 * 100};
     uint32_t constexpr S{N * sizeof(float)};
 

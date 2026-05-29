@@ -1,6 +1,7 @@
 #include <cstring>
 #include <gpu/GpuManager.hpp>
 #include <gpu/HostVisibleBuffer.hpp>
+#include <utils/try_expected.hpp>
 
 namespace gpu {
 
@@ -8,9 +9,7 @@ auto HostVisibleBuffer::init(size_t size,  //
                              bool readback,  //
                              VkBufferUsageFlags usageFlags  //
                              ) noexcept -> std::expected<void, std::string> {
-    if (!GpuManager::initialized()) {
-        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
-    }
+    TRY_EXPECTED_REF(auto& gpuManager, GpuManager::get());
 
     m_size = size;
 
@@ -41,7 +40,7 @@ auto HostVisibleBuffer::init(size_t size,  //
     allocationCreateInfo.pUserData = nullptr;
 
     VmaAllocationInfo allocationInfo{};
-    if (vmaCreateBuffer(GpuManager::get().allocator(),  //
+    if (vmaCreateBuffer(gpuManager.allocator(),  //
                         &bufferCreateInfo,  //
                         &allocationCreateInfo,  //
                         &m_buffer,  //
@@ -60,7 +59,9 @@ auto HostVisibleBuffer::copyTo(std::span<std::byte const> data,  //
         return std::unexpected{"HostVisibleBuffer is not initialized. Did you forget to call init()?"};
     }
 
-    if (vmaCopyMemoryToAllocation(GpuManager::get().allocator(),  //
+    TRY_EXPECTED_REF(auto& gpuManager, GpuManager::get());
+
+    if (vmaCopyMemoryToAllocation(gpuManager.allocator(),  //
                                   data.data(),  //
                                   m_allocation,  //
                                   offset,  //
@@ -76,7 +77,9 @@ auto HostVisibleBuffer::copyFrom(void* dst, size_t size, size_t offset) noexcept
         return std::unexpected{"HostVisibleBuffer is not initialized. Did you forget to call init()?"};
     }
 
-    if (vmaCopyAllocationToMemory(GpuManager::get().allocator(), m_allocation, offset, dst, size) != VK_SUCCESS) {
+    TRY_EXPECTED_REF(auto& gpuManager, GpuManager::get());
+
+    if (vmaCopyAllocationToMemory(gpuManager.allocator(), m_allocation, offset, dst, size) != VK_SUCCESS) {
         return std::unexpected{"failed to copy data from host-visible buffer"};
     }
 
@@ -88,7 +91,15 @@ auto HostVisibleBuffer::destroy() noexcept -> void {
         return;
     }
 
-    vmaDestroyBuffer(GpuManager::get().allocator(), m_buffer, m_allocation);
+    auto result{GpuManager::get()};
+    // should never happen, since if m_buffer exists meanss GpuManager is initizlized
+    if (!result) {
+        return;
+    }
+
+    auto& gpuManager{result.value().get()};
+
+    vmaDestroyBuffer(gpuManager.allocator(), m_buffer, m_allocation);
 
     m_allocation = VK_NULL_HANDLE;
     m_buffer = VK_NULL_HANDLE;

@@ -62,11 +62,7 @@ auto copy_to(VkCommandBuffer commandBuffer,  //
 auto init_buffer_sync(DeviceBuffer const& deviceBuffer,  //
                       std::span<std::byte const> data  //
                       ) noexcept -> std::expected<void, std::string> {
-    if (!GpuManager::initialized()) {
-        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
-    }
-
-    GpuManager& gpuManager{GpuManager::get()};
+    TRY_EXPECTED_REF(auto& gpuManager, GpuManager::get());
 
     HostVisibleBuffer stagingBuffer{};
     TRY_EXPECTED_VOID(stagingBuffer.init(data.size()));

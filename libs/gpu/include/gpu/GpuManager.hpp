@@ -48,9 +48,7 @@ private:
     };
 
 public:
-    static auto get() noexcept -> GpuManager&;
-    [[nodiscard]] static auto init() noexcept -> std::expected<void, std::string>;
-    static auto initialized() noexcept -> bool;
+    [[nodiscard]] static auto get() noexcept -> std::expected<std::reference_wrapper<GpuManager>, std::string>;
     static auto destroy() noexcept -> void;
 
     GpuManager(const GpuManager&) = delete;
@@ -87,7 +85,6 @@ public:
     auto physicalDeviceProperties() const noexcept -> VkPhysicalDeviceProperties2 const&;
     auto storageDescriptorSetManager() noexcept -> StorageDescriptorSetManager&;
 
-private:
     static bool m_initialized;
 
 private:

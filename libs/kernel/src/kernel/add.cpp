@@ -86,11 +86,9 @@ auto add(gpu::DeviceBuffer const& a,  //
          uint32_t workgroupSizeX,  //
          std::optional<uint64_t> sizeBytes  //
          ) noexcept -> std::expected<void, std::string> {
-    if (!gpu::GpuManager::initialized()) {
-        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
-    }
+    TRY_EXPECTED_REF(auto& gpuManager, gpu::GpuManager::get());
 
-    auto const& limits{gpu::GpuManager::get().physicalDeviceProperties().properties.limits};
+    auto const& limits{gpuManager.physicalDeviceProperties().properties.limits};
     if (workgroupSizeX > limits.maxComputeWorkGroupSize[0]) {
         return std::unexpected{
             fmt::format("provided workgroupSizeX ({}) exceeds the maximum compute work group size ({})", workgroupSizeX,
@@ -133,9 +131,7 @@ auto add(gpu::DeviceBuffer const& a,  //
 
     uint32_t constexpr WORKGROUP_SIZE_Y{1};
     uint32_t constexpr WORKGROUP_SIZE_Z{1};
-    // uint32_t constexpr WORKGROUP_SIZE{WORKGROUP_SIZE_X * WORKGROUP_SIZE_Y * WORKGROUP_SIZE_Z};
 
-    gpu::GpuManager& gpuManager{gpu::GpuManager::get()};
     VkPipeline vkPipeline{VK_NULL_HANDLE};
 
     if (auto p{gpuManager.getPipeline(KERNEL_NAME,  //

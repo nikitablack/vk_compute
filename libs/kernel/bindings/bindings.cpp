@@ -96,19 +96,13 @@ PYBIND11_MODULE(python_kernel, m) {
         },
         py::arg("size"));
 
-    m.def("init", []() {
-        if (auto const res{gpu::GpuManager::init()}; !res) {
-            throw std::runtime_error(res.error());
-        }
-    });
-
     m.def("destroy_device_buffer", [](DeviceBufferHandle h) {
         gpu::DeviceBuffer& buffer{bufferRegistry.get(h)};
         buffer.destroy();
         bufferRegistry.remove(h);
     });
 
-    m.def("clear", []() { gpu::GpuManager::destroy(); });
+    m.def("destroy", []() { gpu::GpuManager::destroy(); });
 
     m.def("add",  //
           &add_impl,  //

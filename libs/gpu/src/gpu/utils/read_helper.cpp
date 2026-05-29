@@ -15,15 +15,11 @@ auto read_data_sync(DeviceBuffer const& src,  //
                     HostVisibleBuffer const& dst,  //
                     uint32_t size  //
                     ) -> std::expected<void, std::string> {
-    if (!GpuManager::initialized()) {
-        return std::unexpected{"GpuManager is not initialized. Did you forget to call GpuManager::init()?"};
-    }
+    TRY_EXPECTED_REF(auto& gpuManager, GpuManager::get());
 
     if (dst.size() < src.size()) {
         return std::unexpected{"not enough space in destination buffer"};
     }
-
-    GpuManager& gpuManager{GpuManager::get()};
 
     TRY_EXPECTED(auto const commandBuffer, gpuManager.commandManager().commandBufferBegin());
 

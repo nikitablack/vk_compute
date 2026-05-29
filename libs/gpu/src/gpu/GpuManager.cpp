@@ -24,14 +24,8 @@ namespace gpu {
 
 bool GpuManager::m_initialized{false};
 
-auto GpuManager::get() noexcept -> GpuManager& {
+auto GpuManager::get() noexcept -> std::expected<std::reference_wrapper<GpuManager>, std::string> {
     static GpuManager gpuManager{};
-
-    return gpuManager;
-}
-
-auto GpuManager::init() noexcept -> std::expected<void, std::string> {
-    GpuManager& gpuManager{GpuManager::get()};
 
     if (!GpuManager::m_initialized) {
         spdlog::cfg::load_env_levels();
@@ -40,11 +34,7 @@ auto GpuManager::init() noexcept -> std::expected<void, std::string> {
         GpuManager::m_initialized = true;
     }
 
-    return {};
-}
-
-auto GpuManager::initialized() noexcept -> bool {
-    return GpuManager::m_initialized;
+    return gpuManager;
 }
 
 auto GpuManager::destroy() noexcept -> void {
@@ -52,7 +42,8 @@ auto GpuManager::destroy() noexcept -> void {
         return;
     }
 
-    GpuManager& gpuManager{GpuManager::get()};
+    auto r{GpuManager::get()};
+    auto& gpuManager{r.value().get()};
 
     gpuManager.destroyImpl();
 
