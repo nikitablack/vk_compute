@@ -31,7 +31,6 @@ target_sources(gpu
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/DeviceBuffer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/GpuManager.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/HostVisibleBuffer.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/ImmediateDataBufferManager.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/StorageDescriptorSetManager.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/VulkanDebugUtils.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/VulkanFunctions.hpp
@@ -92,7 +91,6 @@ target_sources(gpu
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/DeviceBuffer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/GpuManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/HostVisibleBuffer.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/ImmediateDataBufferManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/StorageDescriptorSetManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/VulkanFunctions.cpp
 )
