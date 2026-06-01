@@ -83,14 +83,13 @@ auto minmax(std::span<float const> in,  //
     TRY_EXPECTED_VOID(deviceData.result.init(8));
 
     // copy data
-    {
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(deviceData.in,  //
-                                                       ::utils::to_byte_span(in)));
-    }
+    TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(deviceData.in,  //
+                                                   ::utils::to_byte_span(in)));
 
     // run compute
     TRY_EXPECTED_VOID(minmax(deviceData.in, deviceData.result, workgroupSizeX, dataSizeBytes));
 
+    // read back
     return read_minmax_result(deviceData.result);
 }
 

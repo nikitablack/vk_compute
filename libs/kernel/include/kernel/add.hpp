@@ -2,6 +2,7 @@
 
 #include <expected>
 #include <gpu/DeviceBuffer.hpp>
+#include <gpu/HostVisibleBuffer.hpp>
 #include <optional>
 #include <span>
 #include <string>
@@ -21,9 +22,10 @@ namespace kernel {
                        std::optional<uint64_t> sizeBytes = std::nullopt  //
                        ) noexcept -> std::expected<void, std::string>;
 
-[[nodiscard]] auto read_add_result(std::vector<float>& resultHost,  //
+[[nodiscard]] auto read_add_result(std::span<float> resultHost,  //
                                    gpu::DeviceBuffer const& resultDevice,  //
-                                   std::optional<size_t> bytesToRead  //
+                                   std::optional<size_t> bytesToRead = std::nullopt,  //
+                                   std::optional<gpu::HostVisibleBuffer> stagingBuffer = std::nullopt  //
                                    ) -> std::expected<void, std::string>;
 
 }  // namespace kernel

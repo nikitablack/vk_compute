@@ -19,15 +19,36 @@ struct DeviceData {
     gpu::DeviceBuffer a{};
     gpu::DeviceBuffer b{};
     gpu::DeviceBuffer result{};
-    gpu::HostVisibleBuffer staging{};
 
     ~DeviceData() {
         a.destroy();
         b.destroy();
         result.destroy();
-        staging.destroy();
     }
 };
+
+auto read_add_result_impl(std::span<float> resultHost,  //
+                          gpu::DeviceBuffer const& resultDevice,  //
+                          size_t bytesToRead,  //
+                          gpu::HostVisibleBuffer& stagingBuffer  //
+                          ) -> std::expected<void, std::string> {
+    if (resultHost.size_bytes() < bytesToRead) {
+        return std::unexpected(fmt::format("result buffer should have space for at least {} bytes", bytesToRead));
+    }
+
+    if (stagingBuffer.size() < bytesToRead) {
+        return std::unexpected(fmt::format("staging buffer should have space for at least {} bytes", bytesToRead));
+    }
+
+    if ((bytesToRead % sizeof(float)) != 0) {
+        return std::unexpected("the size of data to read should be multiple of sizeof(float)");
+    }
+
+    TRY_EXPECTED_VOID(gpu::utils::read_data_sync(resultDevice, stagingBuffer, bytesToRead));
+    TRY_EXPECTED_VOID(stagingBuffer.copyFrom(resultHost.data(), bytesToRead));
+
+    return {};
+}
 
 }  // namespace
 
@@ -69,13 +90,8 @@ auto add(std::span<float const> a,  //
     // run compute
     TRY_EXPECTED_VOID(add(deviceData.a, deviceData.b, deviceData.result, workgroupSizeX, dataSizeBytes));
 
-    // read back
-    {
-        TRY_EXPECTED_VOID(deviceData.staging.init(dataSizeBytes, true));
-
-        TRY_EXPECTED_VOID(gpu::utils::read_data_sync(deviceData.result, deviceData.staging, dataSizeBytes));
-        TRY_EXPECTED_VOID(deviceData.staging.copyFrom(result.data(), dataSizeBytes));
-    }
+    // readback
+    TRY_EXPECTED_VOID(read_add_result(result, deviceData.result, dataSizeBytes));
 
     return {};
 }
@@ -203,28 +219,24 @@ auto add(gpu::DeviceBuffer const& a,  //
     return {};
 }
 
-auto read_add_result(std::vector<float>& resultHost,  //
+auto read_add_result(std::span<float> resultHost,  //
                      gpu::DeviceBuffer const& resultDevice,  //
-                     std::optional<size_t> bytesToRead  //
+                     std::optional<size_t> bytesToRead,  //
+                     std::optional<gpu::HostVisibleBuffer> stagingBuffer  //
                      ) -> std::expected<void, std::string> {
-    gpu::HostVisibleBuffer stagingBuffer{};
-
-    // RAII cleanup
-    auto const guard{::utils::make_scope_guard([&] { stagingBuffer.destroy(); })};
-
     size_t const size{bytesToRead ? *bytesToRead : resultDevice.size()};
 
-    if ((size % sizeof(float)) != 0) {
-        return std::unexpected("result data size should be multiple of sizeof(float)");
+    if (stagingBuffer) {
+        return read_add_result_impl(resultHost, resultDevice, size, *stagingBuffer);
     }
 
-    resultHost.resize(size);
+    gpu::HostVisibleBuffer stagingBufferTmp{};
+    TRY_EXPECTED_VOID(stagingBufferTmp.init(size, true));
 
-    TRY_EXPECTED_VOID(stagingBuffer.init(size, true));
-    TRY_EXPECTED_VOID(gpu::utils::read_data_sync(resultDevice, stagingBuffer, size));
-    TRY_EXPECTED_VOID(stagingBuffer.copyFrom(resultHost.data(), size));
+    // RAII cleanup
+    auto const guard{::utils::make_scope_guard([&] { stagingBufferTmp.destroy(); })};
 
-    return {};
+    return read_add_result_impl(resultHost, resultDevice, size, stagingBufferTmp);
 }
 
 }  // namespace kernel
