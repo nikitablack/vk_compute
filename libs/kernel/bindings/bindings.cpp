@@ -7,7 +7,7 @@
 #include <gpu/GpuManager.hpp>
 #include <gpu/utils/init_helper.hpp>
 #include <iostream>
-#include <kernel/add.hpp>
+#include <kernel/add/add.hpp>
 #include <span>
 #include <unordered_map>
 #include <utils/to_span.hpp>
@@ -47,7 +47,7 @@ auto add_impl(DeviceBufferHandle a,  //
     gpu::DeviceBuffer const& bDevice{bufferRegistry.get(b)};
     gpu::DeviceBuffer const& resultDevice{bufferRegistry.get(result)};
 
-    if (auto const res{kernel::add(aDevice, bDevice, resultDevice, workgroupSizeX, sizeBytes)}; !res) {
+    if (auto const res{kernel::add::run(aDevice, bDevice, resultDevice, workgroupSizeX, sizeBytes)}; !res) {
         throw std::runtime_error(res.error());
     }
 }

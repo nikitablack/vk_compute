@@ -23,9 +23,10 @@ set_target_properties(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
+        dl # for renderdoc
         fmt::fmt
         libs::gpu
-        libs::kernel
+        libs::kernel::add
         libs::utils
         libs::warnings_as_errors
         third_party::renderdoc_api

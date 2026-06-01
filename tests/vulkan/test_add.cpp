@@ -1,7 +1,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <gpu/GpuManager.hpp>
-#include <kernel/add.hpp>
+#include <kernel/add/add.hpp>
 
 namespace {
 
@@ -28,7 +28,7 @@ TEST_CASE("add - 100 elements add, workgroup size 32", "[add]") {
         b[i] = static_cast<float>(2 * i);
     }
 
-    REQUIRE(kernel::add(a, b, result, 32).has_value());
+    REQUIRE(kernel::add::run(a, b, result, 32).has_value());
 
     check_add(a, b, result);
 
@@ -47,7 +47,7 @@ TEST_CASE("add - 100 elements add, workgroup size 64", "[add]") {
         b[i] = static_cast<float>(2 * i);
     }
 
-    REQUIRE(kernel::add(a, b, result, 64).has_value());
+    REQUIRE(kernel::add::run(a, b, result, 64).has_value());
 
     check_add(a, b, result);
 
@@ -66,7 +66,7 @@ TEST_CASE("add - 100 elements add, workgroup size 512", "[add]") {
         b[i] = static_cast<float>(2 * i);
     }
 
-    REQUIRE(kernel::add(a, b, result, 512).has_value());
+    REQUIRE(kernel::add::run(a, b, result, 512).has_value());
 
     check_add(a, b, result);
 
@@ -85,7 +85,7 @@ TEST_CASE("add - 100 elements add, workgroup size 1024", "[add]") {
         b[i] = static_cast<float>(2 * i);
     }
 
-    REQUIRE(kernel::add(a, b, result, 1024).has_value());
+    REQUIRE(kernel::add::run(a, b, result, 1024).has_value());
 
     check_add(a, b, result);
 
@@ -106,7 +106,7 @@ TEST_CASE("add - 100 elements add, workgroup size 2048", "[add]") {
 
     // this should fail because likely 2048 is wrong since max is 1024
     // TODO: add limits check to the add() implementation.
-    REQUIRE_FALSE(kernel::add(a, b, result, 2048).has_value());
+    REQUIRE_FALSE(kernel::add::run(a, b, result, 2048).has_value());
 
     gpu::GpuManager::destroy();
 }
@@ -116,7 +116,7 @@ TEST_CASE("add - single element add", "[add]") {
     std::vector<float> b{2.5f};
     std::vector<float> result(1);
 
-    REQUIRE(kernel::add(a, b, result).has_value());
+    REQUIRE(kernel::add::run(a, b, result).has_value());
 
     check_add(a, b, result);
 
@@ -128,7 +128,7 @@ TEST_CASE("add - zero elements add", "[add]") {
     std::vector<float> b{};
     std::vector<float> result{};
 
-    REQUIRE(kernel::add(a, b, result).has_value());
+    REQUIRE(kernel::add::run(a, b, result).has_value());
 
     REQUIRE(result.empty());
 

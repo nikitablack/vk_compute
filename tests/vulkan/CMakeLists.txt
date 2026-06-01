@@ -21,6 +21,8 @@ target_link_libraries(vk_tests
     PRIVATE
         Catch2::Catch2WithMain
         libs::kernel
+        libs::kernel::add
+        libs::kernel::minmax
         libs::warnings_as_errors
 )
 

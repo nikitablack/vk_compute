@@ -5,7 +5,7 @@
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
 #include <gpu/utils/submit.hpp>
-#include <kernel/add.hpp>
+#include <kernel/add/add.hpp>
 #include <kernel/utils/pipeline_helper.hpp>
 #include <utils/ScopeGuard.hpp>
 #include <utils/to_span.hpp>
@@ -27,11 +27,11 @@ struct DeviceData {
     }
 };
 
-auto read_add_result_impl(std::span<float> resultHost,  //
-                          gpu::DeviceBuffer const& resultDevice,  //
-                          size_t bytesToRead,  //
-                          gpu::HostVisibleBuffer& stagingBuffer  //
-                          ) -> std::expected<void, std::string> {
+auto read_impl(std::span<float> resultHost,  //
+               gpu::DeviceBuffer const& resultDevice,  //
+               size_t bytesToRead,  //
+               gpu::HostVisibleBuffer& stagingBuffer  //
+               ) -> std::expected<void, std::string> {
     if (resultHost.size_bytes() < bytesToRead) {
         return std::unexpected(fmt::format("result buffer should have space for at least {} bytes", bytesToRead));
     }
@@ -52,9 +52,9 @@ auto read_add_result_impl(std::span<float> resultHost,  //
 
 }  // namespace
 
-namespace kernel {
+namespace kernel::add {
 
-auto add(std::span<float const> a,  //
+auto run(std::span<float const> a,  //
          std::span<float const> b,  //
          std::span<float> result,  //
          uint32_t workgroupSizeX  //
@@ -88,15 +88,15 @@ auto add(std::span<float const> a,  //
     }
 
     // run compute
-    TRY_EXPECTED_VOID(add(deviceData.a, deviceData.b, deviceData.result, workgroupSizeX, dataSizeBytes));
+    TRY_EXPECTED_VOID(run(deviceData.a, deviceData.b, deviceData.result, workgroupSizeX, dataSizeBytes));
 
     // readback
-    TRY_EXPECTED_VOID(read_add_result(result, deviceData.result, dataSizeBytes));
+    TRY_EXPECTED_VOID(read(result, deviceData.result, dataSizeBytes));
 
     return {};
 }
 
-auto add(gpu::DeviceBuffer const& a,  //
+auto run(gpu::DeviceBuffer const& a,  //
          gpu::DeviceBuffer const& b,  //
          gpu::DeviceBuffer const& result,  //
          uint32_t workgroupSizeX,  //
@@ -219,15 +219,15 @@ auto add(gpu::DeviceBuffer const& a,  //
     return {};
 }
 
-auto read_add_result(std::span<float> resultHost,  //
-                     gpu::DeviceBuffer const& resultDevice,  //
-                     std::optional<size_t> bytesToRead,  //
-                     std::optional<gpu::HostVisibleBuffer> stagingBuffer  //
-                     ) -> std::expected<void, std::string> {
+auto read(std::span<float> resultHost,  //
+          gpu::DeviceBuffer const& resultDevice,  //
+          std::optional<size_t> bytesToRead,  //
+          std::optional<gpu::HostVisibleBuffer> stagingBuffer  //
+          ) -> std::expected<void, std::string> {
     size_t const size{bytesToRead ? *bytesToRead : resultDevice.size()};
 
     if (stagingBuffer) {
-        return read_add_result_impl(resultHost, resultDevice, size, *stagingBuffer);
+        return read_impl(resultHost, resultDevice, size, *stagingBuffer);
     }
 
     gpu::HostVisibleBuffer stagingBufferTmp{};
@@ -236,7 +236,7 @@ auto read_add_result(std::span<float> resultHost,  //
     // RAII cleanup
     auto const guard{::utils::make_scope_guard([&] { stagingBufferTmp.destroy(); })};
 
-    return read_add_result_impl(resultHost, resultDevice, size, stagingBufferTmp);
+    return read_impl(resultHost, resultDevice, size, stagingBufferTmp);
 }
 
-}  // namespace kernel
+}  // namespace kernel::add

@@ -8,7 +8,7 @@
 #include <gpu/HostVisibleBuffer.hpp>
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
-#include <kernel/add.hpp>
+#include <kernel/add/add.hpp>
 #include <ranges>
 #include <string>
 #include <utils/benchmark_with_percentiles.hpp>
@@ -77,7 +77,7 @@ auto main_impl() -> std::expected<void, std::string> {
 
     // compute
     TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
-                     TRY_EXPECTED_VOID(kernel::add(aDevice, bDevice, resultDevice, 256));
+                     TRY_EXPECTED_VOID(kernel::add::run(aDevice, bDevice, resultDevice, 256));
                      return {};
                  }));
 
@@ -87,7 +87,7 @@ auto main_impl() -> std::expected<void, std::string> {
 
     // read result
     std::vector<float> resultHost(N);
-    TRY_EXPECTED_VOID(kernel::read_add_result(resultHost, resultDevice, S));
+    TRY_EXPECTED_VOID(kernel::add::read(resultHost, resultDevice, S));
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
     if (renderdocApi) {

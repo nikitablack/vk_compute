@@ -8,7 +8,7 @@
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
 #include <gpu/utils/submit.hpp>
-#include <kernel/minmax.hpp>
+#include <kernel/minmax/minmax.hpp>
 #include <kernel/utils/pipeline_helper.hpp>
 #include <utils/ScopeGuard.hpp>
 #include <utils/to_span.hpp>
@@ -36,9 +36,9 @@ auto ordered_uint_to_float(uint32_t u) noexcept -> float {
     return std::bit_cast<float>(v);
 }
 
-auto read_minmax_result_impl(gpu::DeviceBuffer const& resultDevice,  //
-                             gpu::HostVisibleBuffer& stagingBuffer  //
-                             ) -> std::expected<kernel::MinMaxResult, std::string> {
+auto read_impl(gpu::DeviceBuffer const& resultDevice,  //
+               gpu::HostVisibleBuffer& stagingBuffer  //
+               ) -> std::expected<kernel::minmax::Result, std::string> {
     uint32_t constexpr SIZE{8};
 
     if (resultDevice.size() < SIZE) {
@@ -60,7 +60,7 @@ auto read_minmax_result_impl(gpu::DeviceBuffer const& resultDevice,  //
     uint32_t maxUint{};
     std::memcpy(&maxUint, data.data() + 4, 4);
 
-    kernel::MinMaxResult result{};
+    kernel::minmax::Result result{};
     result.min = ordered_uint_to_float(minUint);
     result.max = ordered_uint_to_float(maxUint);
 
@@ -69,11 +69,11 @@ auto read_minmax_result_impl(gpu::DeviceBuffer const& resultDevice,  //
 
 }  // namespace
 
-namespace kernel {
+namespace kernel::minmax {
 
-auto minmax(std::span<float const> in,  //
-            uint32_t workgroupSizeX  //
-            ) noexcept -> std::expected<MinMaxResult, std::string> {
+auto run(std::span<float const> in,  //
+         uint32_t workgroupSizeX  //
+         ) noexcept -> std::expected<Result, std::string> {
     uint32_t const dataSizeBytes{static_cast<uint32_t>(in.size_bytes())};
 
     // create buffers
@@ -87,17 +87,17 @@ auto minmax(std::span<float const> in,  //
                                                    ::utils::to_byte_span(in)));
 
     // run compute
-    TRY_EXPECTED_VOID(minmax(deviceData.in, deviceData.result, workgroupSizeX, dataSizeBytes));
+    TRY_EXPECTED_VOID(run(deviceData.in, deviceData.result, workgroupSizeX, dataSizeBytes));
 
     // read back
-    return read_minmax_result(deviceData.result);
+    return read(deviceData.result);
 }
 
-[[nodiscard]] auto minmax(gpu::DeviceBuffer const& in,  //
-                          gpu::DeviceBuffer const& result,  //
-                          uint32_t workgroupSizeX,  //
-                          std::optional<uint64_t> sizeBytesIn  //
-                          ) noexcept -> std::expected<void, std::string> {
+[[nodiscard]] auto run(gpu::DeviceBuffer const& in,  //
+                       gpu::DeviceBuffer const& result,  //
+                       uint32_t workgroupSizeX,  //
+                       std::optional<uint64_t> sizeBytesIn  //
+                       ) noexcept -> std::expected<void, std::string> {
     TRY_EXPECTED_REF(auto& gpuManager, gpu::GpuManager::get());
 
     auto const& limits{gpuManager.physicalDeviceProperties().properties.limits};
@@ -257,13 +257,13 @@ auto minmax(std::span<float const> in,  //
     return {};
 }
 
-auto read_minmax_result(gpu::DeviceBuffer const& resultDevice,  //
-                        std::optional<gpu::HostVisibleBuffer> stagingBuffer  //
-                        ) -> std::expected<MinMaxResult, std::string> {
+auto read(gpu::DeviceBuffer const& resultDevice,  //
+          std::optional<gpu::HostVisibleBuffer> stagingBuffer  //
+          ) -> std::expected<Result, std::string> {
     uint32_t constexpr SIZE{8};
 
     if (stagingBuffer) {
-        return read_minmax_result_impl(resultDevice, *stagingBuffer);
+        return read_impl(resultDevice, *stagingBuffer);
     }
 
     gpu::HostVisibleBuffer stagingBufferTmp{};
@@ -272,7 +272,7 @@ auto read_minmax_result(gpu::DeviceBuffer const& resultDevice,  //
     // RAII cleanup
     auto const guard{::utils::make_scope_guard([&] { stagingBufferTmp.destroy(); })};
 
-    return read_minmax_result_impl(resultDevice, stagingBufferTmp);
+    return read_impl(resultDevice, stagingBufferTmp);
 }
 
-}  // namespace kernel
+}  // namespace kernel::minmax
