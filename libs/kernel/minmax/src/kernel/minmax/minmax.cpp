@@ -17,7 +17,7 @@
 namespace {
 
 std::string const INIT_KERNEL_NAME{"minmax_uint_init"};
-std::string const COMPUTE_KERNEL_NAME{"minmax_uint_atomic"};
+std::string const COMPUTE_KERNEL_NAME{"minmax_uint_atomic_global"};
 
 struct DeviceData {
     gpu::DeviceBuffer in{};
@@ -221,7 +221,7 @@ auto run(std::span<float const> in,  //
             TRY_EXPECTED(uint32_t const descriptorIndexOut,
                          gpuManager.storageDescriptorSetManager().push(commandBuffer, bufferInfo));
 
-            // see minmax_uint_atomic.comp
+            // see minmax_uint_atomic_global.comp
             auto const pushConstData{gpu::utils::get_push_constant_data(n,  //
                                                                         descriptorIndexIn,  //
                                                                         descriptorIndexOut)};
