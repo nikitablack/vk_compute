@@ -8,8 +8,8 @@
 #include <gpu/HostVisibleBuffer.hpp>
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
-#include <kernel/add.hpp>
-#include <ranges>
+#include <kernel/minmax.hpp>
+#include <random>
 #include <string>
 #include <utils/benchmark_with_percentiles.hpp>
 #include <utils/to_span.hpp>
@@ -26,22 +26,22 @@
 namespace {
 
 auto main_impl() -> std::expected<void, std::string> {
-    uint32_t constexpr N{1024 * 1024 * 100};
+    uint32_t constexpr N{10};
     uint32_t constexpr S{N * sizeof(float)};
 
     // initialize host memory
-    std::vector<float> aHost(N);
-    std::vector<float> bHost(N);
+    std::vector<float> inHost(N);
 
     // initizlize host data
     {
-        std::ranges::copy(
-            std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
-            aHost.begin());
+        std::random_device rd{};
+        std::mt19937 rng{rd()};
+        std::uniform_real_distribution<float> dist{-10.0f, 10.0f};
 
-        std::ranges::copy(
-            std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
-            bHost.begin());
+        for (float& v : inHost) {
+            v = dist(rng);
+            fmt::println("{}", v);
+        }
     }
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
@@ -58,46 +58,43 @@ auto main_impl() -> std::expected<void, std::string> {
 #endif
 
     // initialize device memory
-    gpu::DeviceBuffer aDevice{};
-    gpu::DeviceBuffer bDevice{};
+    gpu::DeviceBuffer inDevice{};
     gpu::DeviceBuffer resultDevice{};
 
-    TRY_EXPECTED_VOID(aDevice.init(S));
-    TRY_EXPECTED_VOID(bDevice.init(S));
-    TRY_EXPECTED_VOID(resultDevice.init(S));
+    TRY_EXPECTED_VOID(inDevice.init(S));
+    TRY_EXPECTED_VOID(resultDevice.init(8));
 
     // copy host data to device
     {
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(aDevice,  //
-                                                       ::utils::to_byte_span(aHost)));
-
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(bDevice,  //
-                                                       ::utils::to_byte_span(bHost)));
+        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(inDevice,  //
+                                                       ::utils::to_byte_span(inHost)));
     }
 
     // compute
-    TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
-                     TRY_EXPECTED_VOID(kernel::add(aDevice, bDevice, resultDevice, 256));
-                     return {};
-                 }));
+    TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles(
+                                             [&]() -> std::expected<void, std::string> {
+                                                 TRY_EXPECTED_VOID(kernel::minmax(inDevice, resultDevice));
+                                                 return {};
+                                             },
+                                             1));
 
     for (auto const& p : percentiles) {
         fmt::print("p{:5.1f}: {:.2f} us\n", p.first, p.second);
     }
 
     // read result
-    std::vector<float> resultHost(N);
-    TRY_EXPECTED_VOID(kernel::read_add_result(resultHost, resultDevice, S));
+    TRY_EXPECTED([[maybe_unused]] auto const minmax, kernel::read_minmax_result(resultDevice));
+    fmt::println("min: {}, max: {}", minmax.min, minmax.max);
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
     if (renderdocApi) {
+        fmt::println("AAAAAAAAAAAAAAAAAa");
         renderdocApi->EndFrameCapture(nullptr, nullptr);
     }
 #endif
 
     // clear
-    aDevice.destroy();
-    bDevice.destroy();
+    inDevice.destroy();
     resultDevice.destroy();
     gpu::GpuManager::destroy();
 

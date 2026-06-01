@@ -2,7 +2,7 @@
 #include <gpu/GpuManager.hpp>
 #include <gpu/utils/create_shader_module.hpp>
 #include <gpu/utils/get_push_constant_data.hpp>
-#include <kernel/utils/create_pipeline.hpp>
+#include <kernel/utils/pipeline_helper.hpp>
 #include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
@@ -64,6 +64,37 @@ auto create_pipeline(std::string const& shaderName,
     }
 
     vkDestroyShaderModule(gpuManager.device(), shaderModule, nullptr);
+
+    return pipeline;
+}
+
+auto get_pipeline(std::string const& shaderName,  //
+                  uint32_t workgroupSizeX,  //
+                  uint32_t workgroupSizeY,  //
+                  uint32_t workgroupSizeZ  //
+                  ) noexcept -> std::expected<VkPipeline, std::string> {
+    TRY_EXPECTED_REF(auto& gpuManager, gpu::GpuManager::get());
+
+    VkPipeline pipeline{VK_NULL_HANDLE};
+
+    if (auto p{gpuManager.getPipeline(shaderName,  //
+                                      workgroupSizeX,  //
+                                      workgroupSizeY,  //
+                                      workgroupSizeZ)}) {
+        pipeline = *p;
+    } else {
+        TRY_EXPECTED(pipeline, utils::create_pipeline(shaderName,  //
+                                                      workgroupSizeX,  //
+                                                      workgroupSizeY,  //
+                                                      workgroupSizeZ));
+
+        // cache the pipeline
+        gpuManager.addPipeline(pipeline,  //
+                               shaderName,  //
+                               workgroupSizeX,  //
+                               workgroupSizeY,  //
+                               workgroupSizeZ);
+    }
 
     return pipeline;
 }

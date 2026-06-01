@@ -9,14 +9,16 @@ add_library(libs::kernel
 
 target_sources(kernel
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/utils/create_pipeline.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/utils/pipeline_helper.hpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/add.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/minmax.hpp
 
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/utils/create_pipeline.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/utils/pipeline_helper.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/add.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/minmax.cpp
 )
 
 target_include_directories(kernel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -48,6 +50,8 @@ addCompileShadersCommand(TARGET_NAME ${kernel_shaders}
     OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders
     SHADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/add.comp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/minmax_uint_atomic.comp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/minmax_uint_init.comp
 )
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)

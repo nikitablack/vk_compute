@@ -2,6 +2,7 @@
 
 #include <expected>
 #include <gpu/DeviceBuffer.hpp>
+#include <optional>
 #include <span>
 #include <string>
 
@@ -19,5 +20,10 @@ namespace kernel {
                        uint32_t workgroupSizeX = 128,  //
                        std::optional<uint64_t> sizeBytes = std::nullopt  //
                        ) noexcept -> std::expected<void, std::string>;
+
+[[nodiscard]] auto read_add_result(std::vector<float>& resultHost,  //
+                                   gpu::DeviceBuffer const& resultDevice,  //
+                                   std::optional<size_t> bytesToRead  //
+                                   ) -> std::expected<void, std::string>;
 
 }  // namespace kernel

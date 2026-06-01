@@ -13,7 +13,7 @@ namespace gpu::utils {
 
 auto read_data_sync(DeviceBuffer const& src,  //
                     HostVisibleBuffer const& dst,  //
-                    uint32_t size  //
+                    size_t size  //
                     ) -> std::expected<void, std::string> {
     TRY_EXPECTED_REF(auto& gpuManager, GpuManager::get());
 

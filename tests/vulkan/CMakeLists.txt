@@ -14,6 +14,7 @@ set_target_properties(vk_tests
 target_sources(vk_tests
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/test_add.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_minmax_uint_atomic.cpp
 )
 
 target_link_libraries(vk_tests

@@ -1,0 +1,51 @@
+#version 450
+#extension GL_EXT_nonuniform_qualifier : require
+// #extension GL_EXT_debug_printf : enable
+
+layout(local_size_x_id = 0,
+       local_size_y_id = 1,
+       local_size_z_id = 2) in;
+
+layout(push_constant) uniform PushConst
+{
+    uint N;
+    uint inDescriptorIndex;
+    uint outDescriptorIndex;
+} pushConstants;
+
+layout (set = 0, binding = 0) buffer DataDescriptorsIn {
+    float data[];
+} dataDescriptorsIn[];
+
+layout (set = 0, binding = 0) buffer DataDescriptorsOut {
+    uint data[];
+} dataDescriptorsOut[];
+
+uint toOrdered(float v)
+{
+    // takes float's bit representation and applies it to uint
+    uint u = floatBitsToUint(v);
+    // need to "order" float range [-inf, +inf] to [0, uint_max] range
+    // negative float has 1 in sign mit (the most significant bit), making uint representation huge
+    return (u & 0x80000000u) != 0u ? ~u : (u ^ 0x80000000u);
+}
+
+void main()
+{
+    const uint globalIdX = gl_GlobalInvocationID.x;
+
+    if(globalIdX >= pushConstants.N){
+        return;
+    }
+
+    const uint inInd = nonuniformEXT(pushConstants.inDescriptorIndex);
+    const uint outInd = nonuniformEXT(pushConstants.outDescriptorIndex);
+
+    const float f = dataDescriptorsIn[inInd].data[globalIdX];
+    const uint v = toOrdered(f);
+
+    // debugPrintfEXT("%f 0x%x 0x%x 0x%x\n", f, v, dataDescriptorsOut[outInd].data[0], dataDescriptorsOut[outInd].data[1]);
+
+    atomicMin(dataDescriptorsOut[outInd].data[0], v);
+    atomicMax(dataDescriptorsOut[outInd].data[1], v);
+}

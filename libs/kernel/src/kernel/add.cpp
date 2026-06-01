@@ -6,7 +6,7 @@
 #include <gpu/utils/read_helper.hpp>
 #include <gpu/utils/submit.hpp>
 #include <kernel/add.hpp>
-#include <kernel/utils/create_pipeline.hpp>
+#include <kernel/utils/pipeline_helper.hpp>
 #include <utils/ScopeGuard.hpp>
 #include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
@@ -102,20 +102,12 @@ auto add(gpu::DeviceBuffer const& a,  //
         if (sizeBytes) {
             dataSizeBytes = *sizeBytes;
 
-            if (dataSizeBytes == 0) {
-                return {};
-            }
-
             if ((a.size() < dataSizeBytes) || (b.size() < dataSizeBytes) || (result.size() < dataSizeBytes)) {
                 return std::unexpected("input buffers are too small");
             }
 
         } else {
             dataSizeBytes = a.size();
-
-            if (dataSizeBytes == 0) {
-                return {};
-            }
 
             if ((dataSizeBytes != b.size()) || (dataSizeBytes != result.size())) {
                 return std::unexpected("input buffers size mismatch");
@@ -127,31 +119,20 @@ auto add(gpu::DeviceBuffer const& a,  //
         }
     }
 
+    if (dataSizeBytes == 0) {
+        return {};
+    }
+
     uint32_t const n{static_cast<uint32_t>(dataSizeBytes / sizeof(float))};
 
     uint32_t constexpr WORKGROUP_SIZE_Y{1};
     uint32_t constexpr WORKGROUP_SIZE_Z{1};
 
-    VkPipeline vkPipeline{VK_NULL_HANDLE};
-
-    if (auto p{gpuManager.getPipeline(KERNEL_NAME,  //
-                                      workgroupSizeX,  //
-                                      WORKGROUP_SIZE_Y,  //
-                                      WORKGROUP_SIZE_Z)}) {
-        vkPipeline = *p;
-    } else {
-        TRY_EXPECTED(vkPipeline, utils::create_pipeline(KERNEL_NAME,  //
-                                                        workgroupSizeX,  //
-                                                        WORKGROUP_SIZE_Y,  //
-                                                        WORKGROUP_SIZE_Z));
-
-        // cache the pipeline
-        gpuManager.addPipeline(vkPipeline,  //
-                               KERNEL_NAME,  //
-                               workgroupSizeX,  //
-                               WORKGROUP_SIZE_Y,  //
-                               WORKGROUP_SIZE_Z);
-    }
+    TRY_EXPECTED(auto const vkPipeline,
+                 utils::get_pipeline(KERNEL_NAME,  //
+                                     workgroupSizeX,  //
+                                     WORKGROUP_SIZE_Y,  //
+                                     WORKGROUP_SIZE_Z));
 
     // compute
     {
@@ -218,6 +199,30 @@ auto add(gpu::DeviceBuffer const& a,  //
             return std::unexpected{"failed to wait queue"};
         }
     }
+
+    return {};
+}
+
+auto read_add_result(std::vector<float>& resultHost,  //
+                     gpu::DeviceBuffer const& resultDevice,  //
+                     std::optional<size_t> bytesToRead  //
+                     ) -> std::expected<void, std::string> {
+    gpu::HostVisibleBuffer stagingBuffer{};
+
+    // RAII cleanup
+    auto const guard{::utils::make_scope_guard([&] { stagingBuffer.destroy(); })};
+
+    size_t const size{bytesToRead ? *bytesToRead : resultDevice.size()};
+
+    if ((size % sizeof(float)) != 0) {
+        return std::unexpected("result data size should be multiple of sizeof(float)");
+    }
+
+    resultHost.resize(size);
+
+    TRY_EXPECTED_VOID(stagingBuffer.init(size, true));
+    TRY_EXPECTED_VOID(gpu::utils::read_data_sync(resultDevice, stagingBuffer, size));
+    TRY_EXPECTED_VOID(stagingBuffer.copyFrom(resultHost.data(), size));
 
     return {};
 }
