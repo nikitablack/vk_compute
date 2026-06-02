@@ -1,0 +1,67 @@
+#version 450
+#extension GL_EXT_nonuniform_qualifier : require
+
+layout(local_size_x_id = 0,
+       local_size_y_id = 1,
+       local_size_z_id = 2) in;
+
+layout(push_constant) uniform PushConst
+{
+    uint N;
+    uint inDescriptorIndex;
+    uint outDescriptorIndex;
+} pushConstants;
+
+layout (set = 0, binding = 0) buffer DataDescriptorsIn {
+    float data[];
+} dataDescriptorsIn[];
+
+layout (set = 0, binding = 0) buffer DataDescriptorsOut {
+    uint data[];
+} dataDescriptorsOut[];
+
+uint toOrdered(float v)
+{
+    // takes float's bit representation and applies it to uint
+    uint u = floatBitsToUint(v);
+    // need to "order" float range [-inf, +inf] to [0, uint_max] range
+    // negative float has 1 in sign mit (the most significant bit), making uint representation huge
+    return (u & 0x80000000u) != 0u ? ~u : (u ^ 0x80000000u);
+}
+
+shared uint workgroupMin;
+shared uint workgroupMax;
+
+void main()
+{
+    const uint globalIdX = gl_GlobalInvocationID.x;
+    const uint localIdx = gl_LocalInvocationID.x;
+
+    if (localIdx == 0)
+    {
+        workgroupMin = 0xFF800000u; // ordered +INF
+        workgroupMax = 0x007FFFFFu; // ordered -INF
+    }
+
+    barrier();
+
+    if(globalIdX < pushConstants.N){
+        const uint inInd = nonuniformEXT(pushConstants.inDescriptorIndex);
+
+        const float f = dataDescriptorsIn[inInd].data[globalIdX];
+        const uint v = toOrdered(f);
+
+        atomicMin(workgroupMin, v);
+        atomicMax(workgroupMax, v);
+    }
+
+    barrier();
+
+    if (localIdx == 0)
+    {
+        const uint outInd = nonuniformEXT(pushConstants.outDescriptorIndex);
+
+        atomicMin(dataDescriptorsOut[outInd].data[0], workgroupMin);
+        atomicMax(dataDescriptorsOut[outInd].data[1], workgroupMax);
+    }
+}

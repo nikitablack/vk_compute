@@ -16,6 +16,7 @@ install(TARGETS
 target_link_libraries(python_kernel
     PRIVATE
         libs::kernel::add
+        libs::kernel::minmax
         libs::utils
 )
 

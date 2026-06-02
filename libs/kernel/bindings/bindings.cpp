@@ -8,6 +8,7 @@
 #include <gpu/utils/init_helper.hpp>
 #include <iostream>
 #include <kernel/add/add.hpp>
+#include <kernel/minmax/minmax.hpp>
 #include <span>
 #include <unordered_map>
 #include <utils/to_span.hpp>
@@ -48,6 +49,18 @@ auto add_impl(DeviceBufferHandle a,  //
     gpu::DeviceBuffer const& resultDevice{bufferRegistry.get(result)};
 
     if (auto const res{kernel::add::run(aDevice, bDevice, resultDevice, workgroupSizeX, sizeBytes)}; !res) {
+        throw std::runtime_error(res.error());
+    }
+}
+
+auto minmax_impl(DeviceBufferHandle in,  //
+                 DeviceBufferHandle result,  //
+                 uint32_t workgroupSizeX,  //
+                 std::optional<size_t> sizeBytes) -> void {
+    gpu::DeviceBuffer const& inDevice{bufferRegistry.get(in)};
+    gpu::DeviceBuffer const& resultDevice{bufferRegistry.get(result)};
+
+    if (auto const res{kernel::minmax::run(inDevice, resultDevice, workgroupSizeX, sizeBytes)}; !res) {
         throw std::runtime_error(res.error());
     }
 }
@@ -108,6 +121,13 @@ PYBIND11_MODULE(python_kernel, m) {
           &add_impl,  //
           py::arg("a"),  //
           py::arg("b"),  //
+          py::arg("result"),  //
+          py::arg("workgroupSizeX") = 128,  //
+          py::arg_v("sizeBytes", std::nullopt, "None"));
+
+    m.def("minmax",  //
+          &minmax_impl,  //
+          py::arg("in"),  //
           py::arg("result"),  //
           py::arg("workgroupSizeX") = 128,  //
           py::arg_v("sizeBytes", std::nullopt, "None"));

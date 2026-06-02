@@ -6,7 +6,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(BUILD_TESTS "Whether or not to build the tests" OFF)
 option(BUILD_CUDA "Whether or not to build Cuda code" OFF)
-option(BUILD_BYNDINGS "Whether or not to build Python bindings" OFF)
+option(BUILD_BINDINGS "Whether or not to build Python bindings" OFF)
 
 include(FetchContent)
 

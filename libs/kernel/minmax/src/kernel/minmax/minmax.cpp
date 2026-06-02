@@ -17,7 +17,8 @@
 namespace {
 
 std::string const INIT_KERNEL_NAME{"minmax_uint_init"};
-std::string const COMPUTE_KERNEL_NAME{"minmax_uint_atomic_global"};
+// std::string const COMPUTE_KERNEL_NAME{"minmax_uint_atomic_global"};
+std::string const COMPUTE_KERNEL_NAME{"minmax_uint_atomic_shared"};
 
 struct DeviceData {
     gpu::DeviceBuffer in{};

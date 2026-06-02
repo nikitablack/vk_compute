@@ -26,7 +26,7 @@
 namespace {
 
 auto main_impl() -> std::expected<void, std::string> {
-    uint32_t constexpr N{10};
+    uint32_t constexpr N{100'000'000};
     uint32_t constexpr S{N * sizeof(float)};
 
     // initialize host memory
@@ -40,7 +40,6 @@ auto main_impl() -> std::expected<void, std::string> {
 
         for (float& v : inHost) {
             v = dist(rng);
-            fmt::println("{}", v);
         }
     }
 
@@ -71,12 +70,10 @@ auto main_impl() -> std::expected<void, std::string> {
     }
 
     // compute
-    TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles(
-                                             [&]() -> std::expected<void, std::string> {
-                                                 TRY_EXPECTED_VOID(kernel::minmax::run(inDevice, resultDevice));
-                                                 return {};
-                                             },
-                                             1));
+    TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
+                     TRY_EXPECTED_VOID(kernel::minmax::run(inDevice, resultDevice));
+                     return {};
+                 }));
 
     for (auto const& p : percentiles) {
         fmt::print("p{:5.1f}: {:.2f} us\n", p.first, p.second);
