@@ -61,7 +61,10 @@ auto GpuManager::initialize() noexcept -> std::expected<void, std::string> {
     TRY_EXPECTED_VOID(VulkanFunctions::initialize(m_instance));
     TRY_EXPECTED(auto const supportedPhysicalDevices, impl::get_supported_physical_devices(m_instance));
     m_physicalDevice = supportedPhysicalDevices[0];
-    m_physicalDeviceProperties = impl::get_physical_device_properties(m_physicalDevice);
+
+    auto const getPhysicalDevicePropertiesResult{impl::get_physical_device_properties(m_physicalDevice)};
+    m_physicalDeviceProperties = getPhysicalDevicePropertiesResult.properties;
+    m_physicalDeviceSubgroupProperties = getPhysicalDevicePropertiesResult.subgroupProperties;
 
     uint32_t constexpr REQUIRED_QUEUE_COUNT{1};
     TRY_EXPECTED(uint32_t const computeQueueFamily,
@@ -213,6 +216,10 @@ auto GpuManager::pipelineLayout() const noexcept -> VkPipelineLayout {
 
 auto GpuManager::physicalDeviceProperties() const noexcept -> VkPhysicalDeviceProperties2 const& {
     return m_physicalDeviceProperties;
+}
+
+auto GpuManager::physicalDeviceSubgroupProperties() const noexcept -> VkPhysicalDeviceSubgroupProperties const& {
+    return m_physicalDeviceSubgroupProperties;
 }
 
 auto GpuManager::storageDescriptorSetManager() noexcept -> StorageDescriptorSetManager& {

@@ -43,7 +43,7 @@ auto check_required_device_extensions(VkPhysicalDevice device) noexcept -> std::
 namespace gpu::impl {
 
 [[nodiscard]] auto check_physical_device_support(VkPhysicalDevice device) noexcept -> std::expected<void, std::string> {
-    const auto props{get_physical_device_properties(device)};
+    const auto props{get_physical_device_properties(device).properties};
 
     spdlog::info("checking physical device support: {}", props.properties.deviceName);
 

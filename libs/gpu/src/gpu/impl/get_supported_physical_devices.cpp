@@ -30,7 +30,7 @@ namespace gpu::impl {
     supportedPhysicalDevices.reserve(deviceCount);
 
     for (auto const device : physicalDevices) {
-        auto const props{get_physical_device_properties(device)};
+        auto const props{get_physical_device_properties(device).properties};
 
         if (auto const result{check_physical_device_support(device)}; result) {
             supportedPhysicalDevices.push_back(device);
@@ -46,7 +46,7 @@ namespace gpu::impl {
 
     spdlog::info("supported devices:");
     for (size_t i{0}; i < supportedPhysicalDevices.size(); ++i) {
-        auto const props{get_physical_device_properties(supportedPhysicalDevices[i])};
+        auto const props{get_physical_device_properties(supportedPhysicalDevices[i]).properties};
 
         spdlog::info("\t{}: {}", i, props.properties.deviceName);
     }

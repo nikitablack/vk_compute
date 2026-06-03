@@ -83,6 +83,7 @@ public:
     auto device() const noexcept -> VkDevice;
     auto pipelineLayout() const noexcept -> VkPipelineLayout;
     auto physicalDeviceProperties() const noexcept -> VkPhysicalDeviceProperties2 const&;
+    auto physicalDeviceSubgroupProperties() const noexcept -> VkPhysicalDeviceSubgroupProperties const&;
     auto storageDescriptorSetManager() noexcept -> StorageDescriptorSetManager&;
 
     static bool m_initialized;
@@ -91,6 +92,7 @@ private:
     VkInstance m_instance{VK_NULL_HANDLE};
     VkPhysicalDevice m_physicalDevice{VK_NULL_HANDLE};
     VkPhysicalDeviceProperties2 m_physicalDeviceProperties{};
+    VkPhysicalDeviceSubgroupProperties m_physicalDeviceSubgroupProperties{};
     VkDevice m_device{VK_NULL_HANDLE};
     VulkanDebugUtils m_debugUtils{};
     VulkanQueue m_computeQueue{};

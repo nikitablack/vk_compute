@@ -4,6 +4,12 @@
 
 namespace gpu::impl {
 
-[[nodiscard]] auto get_physical_device_properties(VkPhysicalDevice device) noexcept -> VkPhysicalDeviceProperties2;
+struct GetPhysicalDevicePropertiesResult {
+    VkPhysicalDeviceProperties2 properties{};
+    VkPhysicalDeviceSubgroupProperties subgroupProperties{};
+};
+
+[[nodiscard]] auto get_physical_device_properties(VkPhysicalDevice device  //
+                                                  ) noexcept -> GetPhysicalDevicePropertiesResult;
 
 }  // namespace gpu::impl
