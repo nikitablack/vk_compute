@@ -77,7 +77,7 @@ auto main_impl() -> std::expected<void, std::string> {
 
     // compute
     TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
-                     TRY_EXPECTED_VOID(kernel::add::run(aDevice, bDevice, resultDevice, 256));
+                     TRY_EXPECTED_VOID(kernel::add::run(aDevice, bDevice, resultDevice));
                      return {};
                  }));
 

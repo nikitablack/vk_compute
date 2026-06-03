@@ -10,6 +10,7 @@ add_library(libs::kernel::utils
 target_sources(kernel_utils
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/utils/pipeline_helper.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/utils/workgroup_size.hpp
 
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/utils/pipeline_helper.cpp

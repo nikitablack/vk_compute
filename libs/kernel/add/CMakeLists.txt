@@ -20,9 +20,9 @@ target_include_directories(kernel_add PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 target_link_libraries(kernel_add
     PUBLIC
         libs::gpu
+        libs::kernel::utils
     PRIVATE
         fmt::fmt
-        libs::kernel::utils
         libs::utils
         libs::warnings_as_errors
         spdlog::spdlog

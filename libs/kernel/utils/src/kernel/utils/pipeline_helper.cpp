@@ -18,22 +18,22 @@ auto create_pipeline(std::string const& shaderName,
                      ) noexcept -> std::expected<VkPipeline, std::string> {
     TRY_EXPECTED_REF(auto& gpuManager, gpu::GpuManager::get());
 
-    std::array<VkSpecializationMapEntry, 3> cpecEntries{};
-    cpecEntries[0].constantID = 0;
-    cpecEntries[0].offset = 0;
-    cpecEntries[0].size = sizeof(uint32_t);
-    cpecEntries[1].constantID = 1;
-    cpecEntries[1].offset = sizeof(uint32_t);
-    cpecEntries[1].size = sizeof(uint32_t);
-    cpecEntries[2].constantID = 2;
-    cpecEntries[2].offset = 2 * sizeof(uint32_t);
-    cpecEntries[2].size = sizeof(uint32_t);
+    std::array<VkSpecializationMapEntry, 3> specEntries{};
+    specEntries[0].constantID = 0;
+    specEntries[0].offset = 0;
+    specEntries[0].size = sizeof(uint32_t);
+    specEntries[1].constantID = 1;
+    specEntries[1].offset = sizeof(uint32_t);
+    specEntries[1].size = sizeof(uint32_t);
+    specEntries[2].constantID = 2;
+    specEntries[2].offset = 2 * sizeof(uint32_t);
+    specEntries[2].size = sizeof(uint32_t);
 
     auto const specData{gpu::utils::get_push_constant_data(workgroupSizeX, workgroupSizeY, workgroupSizeZ)};
 
     VkSpecializationInfo specInfo{};
-    specInfo.mapEntryCount = cpecEntries.size();
-    specInfo.pMapEntries = cpecEntries.data();
+    specInfo.mapEntryCount = specEntries.size();
+    specInfo.pMapEntries = specEntries.data();
     specInfo.dataSize = specData.size();
     specInfo.pData = specData.data();
 

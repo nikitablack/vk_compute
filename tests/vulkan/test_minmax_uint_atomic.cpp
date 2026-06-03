@@ -2,7 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <gpu/GpuManager.hpp>
-#include <kernel/minmax/minmax.hpp>
+#include <kernel/minmax/minmax_atomic.hpp>
 #include <limits>
 #include <random>
 
@@ -31,7 +31,7 @@ TEST_CASE("minmax_atomic_uint - 100 elements in range [-100.0f, 100.0f], default
         v = dist(rng);
     }
 
-    auto const result{kernel::minmax::run(in)};
+    auto const result{kernel::minmax::run_atomic(in)};
 
     REQUIRE(result.has_value());
 
@@ -54,7 +54,7 @@ TEST_CASE("minmax_atomic_uint - 100 only negative elements in range [-1000.0f, -
         v = dist(rng);
     }
 
-    auto const result{kernel::minmax::run(in)};
+    auto const result{kernel::minmax::run_atomic(in)};
 
     REQUIRE(result.has_value());
 
@@ -77,7 +77,7 @@ TEST_CASE("minmax_atomic_uint - 100 only positive elements in range [100.0f, 100
         v = dist(rng);
     }
 
-    auto const result{kernel::minmax::run(in)};
+    auto const result{kernel::minmax::run_atomic(in)};
 
     REQUIRE(result.has_value());
 
@@ -91,7 +91,7 @@ TEST_CASE("minmax_atomic_uint - 10 elements with single negative infinity, defau
     std::vector<float> in(10);
     in[5] = -std::numeric_limits<float>::infinity();
 
-    auto const result{kernel::minmax::run(in)};
+    auto const result{kernel::minmax::run_atomic(in)};
 
     REQUIRE(result.has_value());
 
@@ -105,7 +105,7 @@ TEST_CASE("minmax_atomic_uint - 10 elements with single positive infinity, defau
     std::vector<float> in(10);
     in[5] = std::numeric_limits<float>::infinity();
 
-    auto const result{kernel::minmax::run(in)};
+    auto const result{kernel::minmax::run_atomic(in)};
 
     REQUIRE(result.has_value());
 
@@ -117,7 +117,7 @@ TEST_CASE("minmax_atomic_uint - 10 elements with single positive infinity, defau
 TEST_CASE("minmax_atomic_uint - empty input", "[minmax_atomic_uint]") {
     std::vector<float> in{};
 
-    auto const result{kernel::minmax::run(in)};
+    auto const result{kernel::minmax::run_atomic(in)};
 
     REQUIRE_FALSE(result.has_value());
 

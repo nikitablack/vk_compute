@@ -8,7 +8,7 @@
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
 #include <gpu/utils/submit.hpp>
-#include <kernel/minmax/minmax.hpp>
+#include <kernel/minmax/minmax_atomic.hpp>
 #include <kernel/utils/pipeline_helper.hpp>
 #include <utils/ScopeGuard.hpp>
 #include <utils/to_span.hpp>
@@ -23,12 +23,10 @@ std::string const COMPUTE_KERNEL_NAME{"minmax_uint_atomic_shared"};
 struct DeviceData {
     gpu::DeviceBuffer in{};
     gpu::DeviceBuffer result{};
-    gpu::HostVisibleBuffer staging{};
 
     ~DeviceData() {
         in.destroy();
         result.destroy();
-        staging.destroy();
     }
 };
 
@@ -72,9 +70,9 @@ auto read_impl(gpu::DeviceBuffer const& resultDevice,  //
 
 namespace kernel::minmax {
 
-auto run(std::span<float const> in,  //
-         uint32_t workgroupSizeX  //
-         ) noexcept -> std::expected<Result, std::string> {
+auto run_atomic(std::span<float const> in,  //
+                utils::WorkGroupSize workgroupSizeX  //
+                ) noexcept -> std::expected<Result, std::string> {
     uint32_t const dataSizeBytes{static_cast<uint32_t>(in.size_bytes())};
 
     // create buffers
@@ -88,23 +86,25 @@ auto run(std::span<float const> in,  //
                                                    ::utils::to_byte_span(in)));
 
     // run compute
-    TRY_EXPECTED_VOID(run(deviceData.in, deviceData.result, workgroupSizeX, dataSizeBytes));
+    TRY_EXPECTED_VOID(run_atomic(deviceData.in, deviceData.result, workgroupSizeX, dataSizeBytes));
 
     // read back
-    return read(deviceData.result);
+    return read_atomic(deviceData.result);
 }
 
-[[nodiscard]] auto run(gpu::DeviceBuffer const& in,  //
-                       gpu::DeviceBuffer const& result,  //
-                       uint32_t workgroupSizeX,  //
-                       std::optional<uint64_t> sizeBytesIn  //
-                       ) noexcept -> std::expected<void, std::string> {
+[[nodiscard]] auto run_atomic(gpu::DeviceBuffer const& in,  //
+                              gpu::DeviceBuffer const& result,  //
+                              utils::WorkGroupSize workgroupSizeX,  //
+                              std::optional<uint64_t> sizeBytesIn  //
+                              ) noexcept -> std::expected<void, std::string> {
     TRY_EXPECTED_REF(auto& gpuManager, gpu::GpuManager::get());
 
+    uint32_t const wgSizeX{static_cast<uint32_t>(workgroupSizeX)};
+
     auto const& limits{gpuManager.physicalDeviceProperties().properties.limits};
-    if (workgroupSizeX > limits.maxComputeWorkGroupSize[0]) {
+    if (wgSizeX > limits.maxComputeWorkGroupSize[0]) {
         return std::unexpected{
-            fmt::format("provided workgroupSizeX ({}) exceeds the maximum compute work group size ({})", workgroupSizeX,
+            fmt::format("provided workgroupSizeX ({}) exceeds the maximum compute work group size ({})", wgSizeX,
                         limits.maxComputeWorkGroupSize[0])};
     }
 
@@ -202,7 +202,7 @@ auto run(std::span<float const> in,  //
 
         TRY_EXPECTED(auto const vkComputePipeline,
                      utils::get_pipeline(COMPUTE_KERNEL_NAME,  //
-                                         workgroupSizeX,  //
+                                         wgSizeX,  //
                                          WORKGROUP_SIZE_Y,  //
                                          WORKGROUP_SIZE_Z));
 
@@ -238,7 +238,7 @@ auto run(std::span<float const> in,  //
         // dispatch and wait
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkComputePipeline);
 
-        uint32_t const groupCountX{(n + workgroupSizeX - 1) / workgroupSizeX};
+        uint32_t const groupCountX{(n + wgSizeX - 1) / wgSizeX};
         uint32_t constexpr GROUP_COUNT_Y{1};
         uint32_t constexpr GROUP_COUNT_Z{1};
 
@@ -258,9 +258,9 @@ auto run(std::span<float const> in,  //
     return {};
 }
 
-auto read(gpu::DeviceBuffer const& resultDevice,  //
-          std::optional<gpu::HostVisibleBuffer> stagingBuffer  //
-          ) -> std::expected<Result, std::string> {
+auto read_atomic(gpu::DeviceBuffer const& resultDevice,  //
+                 std::optional<gpu::HostVisibleBuffer> stagingBuffer  //
+                 ) -> std::expected<Result, std::string> {
     uint32_t constexpr SIZE{8};
 
     if (stagingBuffer) {

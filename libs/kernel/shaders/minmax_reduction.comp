@@ -1,0 +1,76 @@
+#version 450
+#extension GL_EXT_nonuniform_qualifier : require
+
+layout(local_size_x_id = 0,
+       local_size_y_id = 1,
+       local_size_z_id = 2) in;
+
+layout(push_constant) uniform PushConst
+{
+    uint N;
+    uint inDescriptorIndex;
+    uint outDescriptorIndex;
+} pushConstants;
+
+layout (set = 0, binding = 0) readonly buffer DataDescriptorsIn {
+    float data[];
+} dataDescriptorsIn[];
+
+struct MinMax
+{
+    float minValue;
+    float maxValue;
+};
+
+layout (set = 0, binding = 0) writeonly buffer DataDescriptorsOut {
+    MinMax data[];
+} dataDescriptorsOut[];
+
+shared MinMax sMinMax[gl_WorkGroupSize.x];
+
+void main()
+{
+    const uint globalId = gl_GlobalInvocationID.x;
+    const uint localId = gl_LocalInvocationID.x;
+    const uint groupId = gl_WorkGroupID.x;
+
+    if (globalId < pushConstants.N)
+    {
+        const uint inInd = nonuniformEXT(pushConstants.inDescriptorIndex);
+        const float f = dataDescriptorsIn[inInd].data[globalId];
+
+        sMinMax[localId].minValue = f;
+        sMinMax[localId].maxValue = f;
+    }
+    else
+    {
+        sMinMax[localId].minValue = 1.0 / 0.0;
+        sMinMax[localId].maxValue = -1.0 / 0.0;
+    }
+
+    barrier();
+
+    for (uint offset = gl_WorkGroupSize.x / 2; offset > 0; offset >>= 1)
+    {
+        if (localId < offset)
+        {
+            const float min1 = sMinMax[localId].minValue;
+            const float min2 = sMinMax[localId + offset].minValue;
+            sMinMax[localId].minValue = min(min1, min2);
+
+            const float max1 = sMinMax[localId].maxValue;
+            const float max2 = sMinMax[localId + offset].maxValue;
+            sMinMax[localId].maxValue = max(max1, max2);
+        }
+
+        barrier();
+    }
+
+    if (localId == 0)
+    {
+        const uint outInd = nonuniformEXT(pushConstants.outDescriptorIndex);
+
+        dataDescriptorsOut[outInd].data[groupId].minValue = sMinMax[0].minValue;
+        dataDescriptorsOut[outInd].data[groupId].maxValue = sMinMax[0].maxValue;
+    }
+}

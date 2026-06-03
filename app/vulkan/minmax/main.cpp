@@ -8,7 +8,8 @@
 #include <gpu/HostVisibleBuffer.hpp>
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
-#include <kernel/minmax/minmax.hpp>
+#include <kernel/minmax/minmax_atomic.hpp>
+#include <kernel/minmax/minmax_reduction.hpp>
 #include <random>
 #include <string>
 #include <utils/benchmark_with_percentiles.hpp>
@@ -26,7 +27,7 @@
 namespace {
 
 auto main_impl() -> std::expected<void, std::string> {
-    uint32_t constexpr N{100'000'000};
+    uint32_t constexpr N{10'000'000};
     uint32_t constexpr S{N * sizeof(float)};
 
     // initialize host memory
@@ -70,8 +71,9 @@ auto main_impl() -> std::expected<void, std::string> {
     }
 
     // compute
+    // TRY_EXPECTED_VOID(kernel::minmax::run2(inDevice, resultDevice, kernel::utils::WorkGroupSize::WG_64))
     TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
-                     TRY_EXPECTED_VOID(kernel::minmax::run(inDevice, resultDevice));
+                     TRY_EXPECTED_VOID(kernel::minmax::run_atomic(inDevice, resultDevice));
                      return {};
                  }));
 
@@ -80,7 +82,7 @@ auto main_impl() -> std::expected<void, std::string> {
     }
 
     // read result
-    TRY_EXPECTED(auto const minmax, kernel::minmax::read(resultDevice));
+    TRY_EXPECTED(auto const minmax, kernel::minmax::read_atomic(resultDevice));
     fmt::println("min: {}, max: {}", minmax.min, minmax.max);
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG

@@ -57,7 +57,7 @@ namespace kernel::add {
 auto run(std::span<float const> a,  //
          std::span<float const> b,  //
          std::span<float> result,  //
-         uint32_t workgroupSizeX  //
+         utils::WorkGroupSize workgroupSizeX  //
          ) noexcept -> std::expected<void, std::string> {
     // special case
     if (a.size() == 0) {
@@ -99,15 +99,17 @@ auto run(std::span<float const> a,  //
 auto run(gpu::DeviceBuffer const& a,  //
          gpu::DeviceBuffer const& b,  //
          gpu::DeviceBuffer const& result,  //
-         uint32_t workgroupSizeX,  //
+         utils::WorkGroupSize workgroupSizeX,  //
          std::optional<uint64_t> sizeBytes  //
          ) noexcept -> std::expected<void, std::string> {
     TRY_EXPECTED_REF(auto& gpuManager, gpu::GpuManager::get());
 
+    auto const wgSizeX{static_cast<uint32_t>(workgroupSizeX)};
+
     auto const& limits{gpuManager.physicalDeviceProperties().properties.limits};
-    if (workgroupSizeX > limits.maxComputeWorkGroupSize[0]) {
+    if (wgSizeX > limits.maxComputeWorkGroupSize[0]) {
         return std::unexpected{
-            fmt::format("provided workgroupSizeX ({}) exceeds the maximum compute work group size ({})", workgroupSizeX,
+            fmt::format("provided workgroupSizeX ({}) exceeds the maximum compute work group size ({})", wgSizeX,
                         limits.maxComputeWorkGroupSize[0])};
     }
 
@@ -146,7 +148,7 @@ auto run(gpu::DeviceBuffer const& a,  //
 
     TRY_EXPECTED(auto const vkPipeline,
                  utils::get_pipeline(KERNEL_NAME,  //
-                                     workgroupSizeX,  //
+                                     wgSizeX,  //
                                      WORKGROUP_SIZE_Y,  //
                                      WORKGROUP_SIZE_Z));
 
@@ -199,7 +201,7 @@ auto run(gpu::DeviceBuffer const& a,  //
         // dispatch and wait
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline);
 
-        uint32_t const groupCountX{(n + workgroupSizeX - 1) / workgroupSizeX};
+        uint32_t const groupCountX{(n + wgSizeX - 1) / wgSizeX};
         uint32_t constexpr GROUP_COUNT_Y{1};
         uint32_t constexpr GROUP_COUNT_Z{1};
 

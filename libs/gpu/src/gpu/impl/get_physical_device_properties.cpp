@@ -4,7 +4,8 @@
 namespace gpu::impl {
 
 auto get_physical_device_properties(VkPhysicalDevice device) noexcept -> VkPhysicalDeviceProperties2 {
-    VkPhysicalDeviceProperties2 physicalDeviceProperties2 = vku::InitStructHelper{};
+    VkPhysicalDeviceSubgroupProperties subgroupProperties = vku::InitStructHelper{};
+    VkPhysicalDeviceProperties2 physicalDeviceProperties2 = vku::InitStructHelper{&subgroupProperties};
 
     vkGetPhysicalDeviceProperties2(device, &physicalDeviceProperties2);
 
