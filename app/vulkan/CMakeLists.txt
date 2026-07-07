@@ -5,4 +5,5 @@ if(VK_ENABLE_RENDERDOC_DEBUG)
 endif()
 
 add_subdirectory(add)
-add_subdirectory(minmax)
+add_subdirectory(minmax_v1)
+add_subdirectory(minmax_v2)

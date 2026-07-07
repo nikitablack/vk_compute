@@ -8,8 +8,8 @@
 #include <gpu/HostVisibleBuffer.hpp>
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
-#include <kernel/Add.hpp>
-#include <ranges>
+#include <kernel/MinMaxV2.hpp>
+#include <random>
 #include <string>
 #include <utils/benchmark_with_percentiles.hpp>
 #include <utils/to_span.hpp>
@@ -26,22 +26,22 @@
 namespace {
 
 auto main_impl() -> std::expected<void, std::string> {
-    uint32_t constexpr N{1024 * 1024 * 100};
+    uint32_t constexpr N{10};
     uint32_t constexpr S{N * sizeof(float)};
 
     // initialize host memory
-    std::vector<float> aHost(N);
-    std::vector<float> bHost(N);
+    std::vector<float> inHost(N);
 
     // initizlize host data
     {
-        std::ranges::copy(
-            std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
-            aHost.begin());
+        std::random_device rd{};
+        std::mt19937 rng{rd()};
+        std::uniform_real_distribution<float> dist{-10.0f, 10.0f};
 
-        std::ranges::copy(
-            std::views::iota(uint32_t{0}, N) | std::views::transform([](auto i) { return static_cast<float>(i); }),
-            bHost.begin());
+        for (float& v : inHost) {
+            v = dist(rng);
+            fmt::println("{}", v);
+        }
     }
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
@@ -60,26 +60,21 @@ auto main_impl() -> std::expected<void, std::string> {
     // initialize device memory
     gpu::DeviceBuffer aDevice{};
     gpu::DeviceBuffer bDevice{};
-    gpu::DeviceBuffer cDevice{};
 
     TRY_EXPECTED_VOID(aDevice.init(S));
-    TRY_EXPECTED_VOID(bDevice.init(S));
-    TRY_EXPECTED_VOID(cDevice.init(S));
+    TRY_EXPECTED_VOID(bDevice.init(8));
 
     // copy host data to device
     {
         TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(aDevice,  //
-                                                       ::utils::to_byte_span(aHost)));
-
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(bDevice,  //
-                                                       ::utils::to_byte_span(bHost)));
+                                                       ::utils::to_byte_span(inHost)));
     }
 
-    TRY_EXPECTED(auto add, kernel::Add::create(32));
+    TRY_EXPECTED(auto minmax, (kernel::MinMaxV2::create(128)));
 
     // compute
     TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
-                     TRY_EXPECTED_VOID(add(aDevice, bDevice, cDevice, S));
+                     TRY_EXPECTED_VOID(minmax(aDevice, bDevice, S));
                      return {};
                  }));
 
@@ -88,8 +83,8 @@ auto main_impl() -> std::expected<void, std::string> {
     }
 
     // read result
-    std::vector<float> cHost(N);
-    TRY_EXPECTED_VOID(add.read(cHost, cDevice, S));
+    TRY_EXPECTED(auto const result, minmax.read(bDevice));
+    fmt::println("min: {}, max: {}", result.min, result.max);
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
     if (renderdocApi) {
@@ -100,8 +95,7 @@ auto main_impl() -> std::expected<void, std::string> {
     // clear
     aDevice.destroy();
     bDevice.destroy();
-    cDevice.destroy();
-    add.destroy();
+    minmax.destroy();
     gpu::GpuManager::destroy();
 
     return {};

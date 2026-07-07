@@ -14,14 +14,14 @@ set_target_properties(vk_tests
 target_sources(vk_tests
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/test_add.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/test_minmax_uint_atomic.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_minmax_v1.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_minmax_v2.cpp
 )
 
 target_link_libraries(vk_tests
     PRIVATE
         Catch2::Catch2WithMain
-        libs::kernel::add
-        libs::kernel::minmax
+        libs::kernel
         libs::warnings_as_errors
 )
 

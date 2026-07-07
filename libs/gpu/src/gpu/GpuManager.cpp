@@ -114,11 +114,6 @@ auto GpuManager::destroyImpl() noexcept -> void {
 
     flush();
 
-    for (auto const& p : m_dataToPipeline) {
-        vkDestroyPipeline(m_device, p.second, nullptr);
-    }
-    m_dataToPipeline.clear();
-
     m_storageDescriptorSetManager.destroy();
 
     vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
@@ -137,45 +132,6 @@ auto GpuManager::destroyImpl() noexcept -> void {
 
     vkDestroyInstance(m_instance, nullptr);
     m_instance = VK_NULL_HANDLE;
-}
-
-auto GpuManager::addPipeline(VkPipeline pipeline,  //
-                             std::string const& name,  //
-                             uint32_t workgroupSizeX,  //
-                             uint32_t workgroupSizeY,  //
-                             uint32_t workgroupSizeZ  //
-                             ) noexcept -> void {
-    PipelineData pipelineData{};
-    pipelineData.name = name;
-    pipelineData.workgroupSizeX = workgroupSizeX;
-    pipelineData.workgroupSizeY = workgroupSizeY;
-    pipelineData.workgroupSizeZ = workgroupSizeZ;
-
-    VkPipeline existingPipeline{m_dataToPipeline[pipelineData]};
-    if (existingPipeline) {
-        vkDestroyPipeline(m_device, existingPipeline, nullptr);
-    }
-
-    m_dataToPipeline[pipelineData] = pipeline;
-}
-
-auto GpuManager::getPipeline(std::string const& name,  //
-                             uint32_t workgroupSizeX,  //
-                             uint32_t workgroupSizeY,  //
-                             uint32_t workgroupSizeZ  //
-                             ) noexcept -> std::optional<VkPipeline> {
-    PipelineData pipelineData{};
-    pipelineData.name = name;
-    pipelineData.workgroupSizeX = workgroupSizeX;
-    pipelineData.workgroupSizeY = workgroupSizeY;
-    pipelineData.workgroupSizeZ = workgroupSizeZ;
-
-    VkPipeline pipeline{m_dataToPipeline[pipelineData]};
-    if (pipeline) {
-        return pipeline;
-    }
-
-    return std::nullopt;
 }
 
 auto GpuManager::flush() const noexcept -> void {

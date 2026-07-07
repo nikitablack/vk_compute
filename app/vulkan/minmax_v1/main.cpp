@@ -8,8 +8,7 @@
 #include <gpu/HostVisibleBuffer.hpp>
 #include <gpu/utils/init_helper.hpp>
 #include <gpu/utils/read_helper.hpp>
-#include <kernel/minmax/minmax_atomic.hpp>
-#include <kernel/minmax/minmax_reduction.hpp>
+#include <kernel/MinMaxV1.hpp>
 #include <random>
 #include <string>
 #include <utils/benchmark_with_percentiles.hpp>
@@ -27,7 +26,7 @@
 namespace {
 
 auto main_impl() -> std::expected<void, std::string> {
-    uint32_t constexpr N{10'000'000};
+    uint32_t constexpr N{1024 * 1024};
     uint32_t constexpr S{N * sizeof(float)};
 
     // initialize host memory
@@ -58,22 +57,23 @@ auto main_impl() -> std::expected<void, std::string> {
 #endif
 
     // initialize device memory
-    gpu::DeviceBuffer inDevice{};
-    gpu::DeviceBuffer resultDevice{};
+    gpu::DeviceBuffer aDevice{};
+    gpu::DeviceBuffer bDevice{};
 
-    TRY_EXPECTED_VOID(inDevice.init(S));
-    TRY_EXPECTED_VOID(resultDevice.init(8));
+    TRY_EXPECTED_VOID(aDevice.init(S));
+    TRY_EXPECTED_VOID(bDevice.init(8));
 
     // copy host data to device
     {
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(inDevice,  //
+        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(aDevice,  //
                                                        ::utils::to_byte_span(inHost)));
     }
 
+    TRY_EXPECTED(auto minmax, (kernel::MinMaxV1::create(128)));
+
     // compute
-    // TRY_EXPECTED_VOID(kernel::minmax::run2(inDevice, resultDevice, kernel::utils::WorkGroupSize::WG_64))
     TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
-                     TRY_EXPECTED_VOID(kernel::minmax::run_atomic(inDevice, resultDevice));
+                     TRY_EXPECTED_VOID(minmax(aDevice, bDevice, S));
                      return {};
                  }));
 
@@ -82,8 +82,8 @@ auto main_impl() -> std::expected<void, std::string> {
     }
 
     // read result
-    TRY_EXPECTED(auto const minmax, kernel::minmax::read_atomic(resultDevice));
-    fmt::println("min: {}, max: {}", minmax.min, minmax.max);
+    TRY_EXPECTED(auto const result, minmax.read(bDevice));
+    fmt::println("min: {}, max: {}", result.min, result.max);
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
     if (renderdocApi) {
@@ -92,8 +92,9 @@ auto main_impl() -> std::expected<void, std::string> {
 #endif
 
     // clear
-    inDevice.destroy();
-    resultDevice.destroy();
+    aDevice.destroy();
+    bDevice.destroy();
+    minmax.destroy();
     gpu::GpuManager::destroy();
 
     return {};

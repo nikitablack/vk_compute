@@ -32,7 +32,7 @@ function(addCompileShadersCommand)
         list(APPEND OUTPUT_PATHS ${addCompileShadersCommand_OUTPUT_DIR}/${VAR}.spv)
 
         add_custom_command(OUTPUT ${addCompileShadersCommand_OUTPUT_DIR}/${VAR}.spv
-                COMMAND ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} -gVS --target-env vulkan1.3 -V ${shader} -o ${addCompileShadersCommand_OUTPUT_DIR}/${VAR}.spv
+                COMMAND ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} -gVS --target-env vulkan1.4 -V ${shader} -o ${addCompileShadersCommand_OUTPUT_DIR}/${VAR}.spv
                 DEPENDS ${shader} ${addCompileShadersCommand_DEPENDS}
                 COMMENT "Compiling ${shader}"
                 )

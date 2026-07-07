@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 
-project(vk_add LANGUAGES CXX)
+project(vk_minmax_v2 LANGUAGES CXX)
 
 add_executable(${PROJECT_NAME})
 

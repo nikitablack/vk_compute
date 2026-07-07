@@ -1,6 +1,6 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : require
-// #extension GL_EXT_debug_printf : enable
+#extension GL_EXT_debug_printf : enable
 
 // specialization constants
 layout(local_size_x_id = 0,
@@ -32,9 +32,12 @@ void main() {
 
     const float a = dataDescriptors[aInd].data[globalIdX];
     const float b = dataDescriptors[bInd].data[globalIdX];
-    const float result = a + b;
+    const float c = a + b;
 
-    dataDescriptors[outInd].data[globalIdX] = result;
+    dataDescriptors[outInd].data[globalIdX] = c;
 
-    // debugPrintfEXT("%d\n", gl_LocalInvocationID.x);
+    if(globalIdX < 5)
+    {
+        debugPrintfEXT("%d %d %d %d\n", globalIdX, a, b, c);
+    }
 }

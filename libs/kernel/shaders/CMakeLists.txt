@@ -16,4 +16,5 @@ addCompileShadersCommand(TARGET_NAME ${kernel_shaders}
     ${CMAKE_CURRENT_SOURCE_DIR}/minmax_uint_atomic_global.comp
     ${CMAKE_CURRENT_SOURCE_DIR}/minmax_uint_atomic_shared.comp
     ${CMAKE_CURRENT_SOURCE_DIR}/minmax_uint_init.comp
+    ${CMAKE_CURRENT_SOURCE_DIR}/minmax_uint_subgroup.comp
 )

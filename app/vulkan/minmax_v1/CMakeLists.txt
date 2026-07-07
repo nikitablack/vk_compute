@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 
-project(vk_minmax LANGUAGES CXX)
+project(vk_minmax_v1 LANGUAGES CXX)
 
 add_executable(${PROJECT_NAME})
 
@@ -26,7 +26,7 @@ target_link_libraries(${PROJECT_NAME}
         dl # for renderdoc
         fmt::fmt
         libs::gpu
-        libs::kernel::minmax
+        libs::kernel
         libs::utils
         libs::warnings_as_errors
         third_party::renderdoc_api
