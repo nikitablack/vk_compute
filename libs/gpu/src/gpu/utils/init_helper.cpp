@@ -12,24 +12,25 @@
 namespace gpu::utils {
 
 auto copy_to(VkCommandBuffer commandBuffer,  //
-             DeviceBuffer const& deviceBuffer,  //
-             HostVisibleBuffer const& stagingBuffer,  //
-             VkDeviceSize dstBufferOffset,  //
-             VkDeviceSize stagingBufferOffset  //
+             DeviceBuffer const& dst,  //
+             HostVisibleBuffer const& src,  //
+             VkDeviceSize sizeBytes,  //
+             VkDeviceSize dstOffset,  //
+             VkDeviceSize srcOffset  //
              ) noexcept -> std::expected<void, std::string> {
-    if ((stagingBufferOffset > stagingBuffer.size()) ||
-        ((stagingBuffer.size() - stagingBufferOffset) != deviceBuffer.size())) {
-        return std::unexpected{"staging buffer size does not match buffer size"};
+    if ((src.size() < (srcOffset + sizeBytes)) ||  //
+        (dst.size() < (dstOffset + sizeBytes))) {
+        return std::unexpected{"input buffers are too small"};
     }
 
     VkBufferCopy2 region = vku::InitStructHelper{};
-    region.srcOffset = stagingBufferOffset;
-    region.dstOffset = dstBufferOffset;
-    region.size = stagingBuffer.size();
+    region.srcOffset = srcOffset;
+    region.dstOffset = dstOffset;
+    region.size = sizeBytes;
 
     VkCopyBufferInfo2 copyInfo = vku::InitStructHelper{};
-    copyInfo.srcBuffer = stagingBuffer.buffer();
-    copyInfo.dstBuffer = deviceBuffer.buffer();
+    copyInfo.srcBuffer = src.buffer();
+    copyInfo.dstBuffer = dst.buffer();
     copyInfo.regionCount = 1;
     copyInfo.pRegions = &region;
 
@@ -39,14 +40,15 @@ auto copy_to(VkCommandBuffer commandBuffer,  //
 }
 
 [[nodiscard]] auto init_buffer(VkCommandBuffer commandBuffer,  //
-                               DeviceBuffer const& deviceBuffer,  //
-                               HostVisibleBuffer const& stagingBuffer,  //
-                               VkDeviceSize dstBufferOffset,  //
-                               VkDeviceSize stagingBufferOffset  //
+                               DeviceBuffer const& dst,  //
+                               HostVisibleBuffer src,  //
+                               VkDeviceSize sizeBytes,  //
+                               VkDeviceSize dstOffset,  //
+                               VkDeviceSize srcOffset  //
                                ) noexcept -> std::expected<InitData, std::string> {
-    utils::before_write(commandBuffer, deviceBuffer);
-    TRY_EXPECTED_VOID(copy_to(commandBuffer, deviceBuffer, stagingBuffer, dstBufferOffset, stagingBufferOffset));
-    utils::after_write(commandBuffer, deviceBuffer);
+    utils::before_write(commandBuffer, dst);
+    TRY_EXPECTED_VOID(copy_to(commandBuffer, dst, src, sizeBytes, dstOffset, srcOffset));
+    utils::after_write(commandBuffer, dst);
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         return std::unexpected{"failed to end copy command buffer"};
@@ -54,36 +56,44 @@ auto copy_to(VkCommandBuffer commandBuffer,  //
 
     InitData initData{};
     initData.commandBuffer = commandBuffer;
-    initData.stagingBuffer = stagingBuffer;
+    initData.stagingBuffer = std::move(src);
 
     return initData;
 }
 
-auto init_buffer_sync(DeviceBuffer const& deviceBuffer,  //
-                      std::span<std::byte const> data  //
+auto init_buffer_sync(DeviceBuffer const& dst,  //
+                      std::span<std::byte const> src,  //
+                      VkDeviceSize dstOffset  //
                       ) noexcept -> std::expected<void, std::string> {
     TRY_EXPECTED_REF(auto& gpuManager, GpuManager::get());
 
-    HostVisibleBuffer stagingBuffer{};
-    TRY_EXPECTED_VOID(stagingBuffer.init(data.size()));
-    TRY_EXPECTED_VOID(stagingBuffer.copyTo(data));
+    TRY_EXPECTED(auto stagingBuffer, HostVisibleBuffer::create(src));
 
     TRY_EXPECTED(auto const commandBuffer, gpuManager.commandManager().commandBufferBegin());
 
     // RAII cleanup
     auto const guard{::utils::make_scope_guard([&] {
         gpuManager.storageDescriptorSetManager().reset();
+
         if (auto const r{gpuManager.commandManager().resetCommandBuffer(commandBuffer)}; !r) {
             spdlog::warn("{}", r.error());
         }
+
+        stagingBuffer.destroy();
     })};
 
     TRY_EXPECTED(InitData initData,
                  init_buffer(commandBuffer,  //
-                             deviceBuffer,  //
-                             stagingBuffer));
+                             dst,  //
+                             std::move(stagingBuffer),  //
+                             src.size_bytes(),  //
+                             dstOffset,  //
+                             0));
 
-    TRY_EXPECTED_VOID(submit_init_data_sync(std::vector<InitData>{std::move(initData)}, gpuManager.computeQueue()));
+    std::vector<InitData> v{};
+    v.push_back(std::move(initData));
+
+    TRY_EXPECTED_VOID(submit_init_data_sync(std::move(v), gpuManager.computeQueue()));
 
     return {};
 }

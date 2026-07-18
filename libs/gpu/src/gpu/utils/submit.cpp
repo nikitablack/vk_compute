@@ -4,17 +4,21 @@
 namespace gpu::utils {
 
 auto submit(VkCommandBuffer commandBuffer, VkQueue queue, VkFence fence) noexcept -> std::expected<void, std::string> {
-    VkSubmitInfo submitInfo = vku::InitStructHelper{};
-    submitInfo.waitSemaphoreCount = 0;
-    submitInfo.pWaitSemaphores = nullptr;
-    submitInfo.pWaitDstStageMask = nullptr;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-    submitInfo.signalSemaphoreCount = 0;
-    submitInfo.pSignalSemaphores = nullptr;
+    VkCommandBufferSubmitInfo commandBufferSubmitInfo = vku::InitStructHelper{};
+    commandBufferSubmitInfo.commandBuffer = commandBuffer;
+    commandBufferSubmitInfo.deviceMask = 0;
 
-    if (vkQueueSubmit(queue, 1, &submitInfo, fence) != VK_SUCCESS) {
-        return std::unexpected{"failed to submit"};
+    VkSubmitInfo2 submitInfo = vku::InitStructHelper{};
+    submitInfo.flags = 0;
+    submitInfo.waitSemaphoreInfoCount = 0;
+    submitInfo.pWaitSemaphoreInfos = nullptr;
+    submitInfo.commandBufferInfoCount = 1;
+    submitInfo.pCommandBufferInfos = &commandBufferSubmitInfo;
+    submitInfo.signalSemaphoreInfoCount = 0;
+    submitInfo.pSignalSemaphoreInfos = nullptr;
+
+    if (vkQueueSubmit2(queue, 1, &submitInfo, fence) != VK_SUCCESS) {
+        return std::unexpected{"failed to submit staging command buffer"};
     }
 
     return {};

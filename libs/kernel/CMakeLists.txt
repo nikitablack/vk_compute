@@ -17,13 +17,13 @@ add_library(libs::kernel
 target_sources(kernel
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/Add.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/MinMaxV1.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/MinMaxV2.hpp
+        # ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/MinMaxV1.hpp
+        # ${CMAKE_CURRENT_SOURCE_DIR}/include/kernel/MinMaxV2.hpp
 
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/Add.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/MinMaxV1.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/MinMaxV2.cpp
+        # ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/MinMaxV1.cpp
+        # ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/MinMaxV2.cpp
 )
 
 target_include_directories(kernel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

@@ -1,9 +1,41 @@
 #include <gpu/DeviceBuffer.hpp>
 #include <gpu/GpuManager.hpp>
+#include <gpu/utils/init_helper.hpp>
 #include <utils/try_expected.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace gpu {
+
+DeviceBuffer::DeviceBuffer(DeviceBuffer&& other) noexcept
+    : m_buffer{other.m_buffer},  //
+      m_size{other.m_size},  //
+      m_allocation{other.m_allocation}  //
+{
+    other.m_buffer = VK_NULL_HANDLE;
+    other.m_size = 0;
+    other.m_allocation = VK_NULL_HANDLE;
+}
+
+auto DeviceBuffer::operator=(DeviceBuffer&& other) noexcept -> DeviceBuffer& {
+    m_buffer = other.m_buffer;
+    m_size = other.m_size;
+    m_allocation = other.m_allocation;
+
+    other.m_buffer = VK_NULL_HANDLE;
+    other.m_size = 0;
+    other.m_allocation = VK_NULL_HANDLE;
+
+    return *this;
+}
+
+auto DeviceBuffer::create(size_t sizeBytes,  //
+                          VkBufferUsageFlags2 usageFlags  //
+                          ) noexcept -> std::expected<DeviceBuffer, std::string> {
+    DeviceBuffer buffer{};
+    TRY_EXPECTED_VOID(buffer.init(sizeBytes, usageFlags));
+
+    return buffer;
+}
 
 auto DeviceBuffer::init(size_t size,  //
                         VkBufferUsageFlags2 usageFlags  //

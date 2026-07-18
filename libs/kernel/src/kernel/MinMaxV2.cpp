@@ -113,16 +113,16 @@ auto MinMaxV2::operator()(gpu::DeviceBuffer const& a,  //
     // input validation
     {
         if (sizeBytes == 0) {
-            return std::unexpected("input buffer should have at least one element");
+            return std::unexpected{"input buffer should have at least one element"};
         }
 
         if ((sizeBytes % sizeof(float)) != 0) {
-            return std::unexpected(fmt::format("input size should be multiple of {}", sizeof(float)));
+            return std::unexpected{fmt::format("input size should be multiple of {}", sizeof(float))};
         }
 
         if (b.size() < (2 * sizeof(float))) {
-            return std::unexpected(
-                fmt::format("result buffer should have space for at least {} bytes", 2 * sizeof(float)));
+            return std::unexpected{
+                fmt::format("result buffer should have space for at least {} bytes", 2 * sizeof(float))};
         }
     }
 
@@ -152,8 +152,8 @@ auto MinMaxV2::operator()(gpu::DeviceBuffer const& a,  //
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_minmaxPipeline);
 
-    gpu::DeviceBuffer inputBuffer{a};
-    gpu::DeviceBuffer outputBuffer{intermediateDeviceData.a};
+    gpu::DeviceBuffer const* inputBuffer{&a};
+    gpu::DeviceBuffer const* outputBuffer{&intermediateDeviceData.a};
 
     bool firstPass{true};
 
@@ -163,21 +163,21 @@ auto MinMaxV2::operator()(gpu::DeviceBuffer const& a,  //
 
         // last pass - use the provided output buffer instead of intermediate
         if (groupCountX == 1) {
-            outputBuffer = b;
+            outputBuffer = &b;
         }
 
         // update descriptors
         {
             VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = inputBuffer.buffer();
+            bufferInfo.buffer = inputBuffer->buffer();
             bufferInfo.offset = 0;
             bufferInfo.range = n * sizeof(float);
 
             TRY_EXPECTED(uint32_t const descriptorIndexA,
                          gpuManager.storageDescriptorSetManager().push(commandBuffer, bufferInfo));
 
-            bufferInfo.buffer = outputBuffer.buffer();
-            bufferInfo.range = outputBuffer.size();
+            bufferInfo.buffer = outputBuffer->buffer();
+            bufferInfo.range = outputBuffer->size();
 
             TRY_EXPECTED(uint32_t const descriptorIndexB,
                          gpuManager.storageDescriptorSetManager().push(commandBuffer, bufferInfo));
@@ -200,7 +200,7 @@ auto MinMaxV2::operator()(gpu::DeviceBuffer const& a,  //
 
         // barrier
         gpu::utils::set_buffer_barrier(commandBuffer,  //
-                                       outputBuffer,  //
+                                       *outputBuffer,  //
                                        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,  //
                                        VK_ACCESS_2_SHADER_WRITE_BIT,  //
                                        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,  //
@@ -216,7 +216,7 @@ auto MinMaxV2::operator()(gpu::DeviceBuffer const& a,  //
             firstPass = false;
 
             inputBuffer = outputBuffer;
-            outputBuffer = intermediateDeviceData.b;
+            outputBuffer = &intermediateDeviceData.b;
         } else {
             std::swap(inputBuffer, outputBuffer);
         }
@@ -245,28 +245,28 @@ auto MinMaxV2::read(gpu::DeviceBuffer const& bDevice,  //
     // RAII cleanup, will do nothing if the temporary buffer was not initialized
     auto const guard{::utils::make_scope_guard([&] { stagingBufferTmp.destroy(); })};
 
-    gpu::HostVisibleBuffer readbackBuffer{};
+    gpu::HostVisibleBuffer* readbackBuffer{};
 
     if (stagingBuffer) {
-        readbackBuffer = *stagingBuffer;
+        readbackBuffer = &stagingBuffer.value();
     } else {
         TRY_EXPECTED_VOID(stagingBufferTmp.init(SIZE_BYTES, true));
 
-        readbackBuffer = stagingBufferTmp;
+        readbackBuffer = &stagingBufferTmp;
     }
 
     if (bDevice.size() < SIZE_BYTES) {
-        return std::unexpected(fmt::format("result buffer should have space for at least {} bytes", SIZE_BYTES));
+        return std::unexpected{fmt::format("result buffer should have space for at least {} bytes", SIZE_BYTES)};
     }
 
-    if (readbackBuffer.size() < SIZE_BYTES) {
-        return std::unexpected(fmt::format("staging buffer should have space for at least {} bytes", SIZE_BYTES));
+    if (readbackBuffer->size() < SIZE_BYTES) {
+        return std::unexpected{fmt::format("staging buffer should have space for at least {} bytes", SIZE_BYTES)};
     }
 
-    TRY_EXPECTED_VOID(gpu::utils::read_data_sync(bDevice, readbackBuffer, SIZE_BYTES));
+    TRY_EXPECTED_VOID(gpu::utils::read_data_sync(bDevice, *readbackBuffer, SIZE_BYTES));
 
     std::array<uint8_t, SIZE_BYTES> data{};
-    TRY_EXPECTED_VOID(readbackBuffer.copyFrom(data.data(), SIZE_BYTES));
+    TRY_EXPECTED_VOID(readbackBuffer->copyFrom(std::as_writable_bytes(std::span{data}), SIZE_BYTES));
 
     Result result{};
     std::memcpy(&result.min, data.data(), 4);

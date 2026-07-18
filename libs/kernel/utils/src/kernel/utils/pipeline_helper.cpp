@@ -3,7 +3,6 @@
 #include <gpu/utils/create_shader_module.hpp>
 #include <gpu/utils/get_push_constant_data.hpp>
 #include <kernel/utils/pipeline_helper.hpp>
-#include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -42,7 +41,7 @@ auto create_pipeline(std::string const& shaderName,
 
     TRY_EXPECTED(auto const shaderModule,
                  gpu::utils::create_shader_module(gpuManager.device(),  //
-                                                  ::utils::to_byte_span(shader.cbegin(), shader.size())));
+                                                  std::as_bytes(std::span{shader.cbegin(), shader.size()})));
 
     VkPipelineShaderStageCreateInfo shaderStageInfo = vku::InitStructHelper{};
     shaderStageInfo.flags = 0;

@@ -1,33 +1,17 @@
 #include <spdlog/spdlog.h>
 
-#include <gpu/DeviceBuffer.hpp>
 #include <gpu/GpuManager.hpp>
 #include <gpu/utils/get_push_constant_data.hpp>
-#include <gpu/utils/init_helper.hpp>
-#include <gpu/utils/read_helper.hpp>
 #include <gpu/utils/submit.hpp>
 #include <kernel/Add.hpp>
 #include <kernel/utils/pipeline_helper.hpp>
 #include <kernel/utils/workgroup_helper.hpp>
 #include <utils/ScopeGuard.hpp>
-#include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
 
 namespace {
 
 std::string constexpr KERNEL_NAME{"add"};
-
-struct DeviceData {
-    gpu::DeviceBuffer a{};
-    gpu::DeviceBuffer b{};
-    gpu::DeviceBuffer c{};
-
-    ~DeviceData() {
-        a.destroy();
-        b.destroy();
-        c.destroy();
-    }
-};
 
 }  // namespace
 
@@ -80,84 +64,123 @@ auto Add::create(uint32_t workgroupSizeX) noexcept -> std::expected<Add, std::st
     return add;
 }
 
-auto Add::operator()(std::span<float const> a,  //
-                     std::span<float const> b,  //
-                     std::span<float> c  //
+auto Add::operator()(std::span<float const> srcA,  //
+                     std::span<float const> srcB,  //
+                     std::span<float> dst  //
 ) const noexcept -> std::expected<void, std::string> {
     // input validation
-    if ((a.size() != b.size()) || (a.size() != c.size())) {
-        return std::unexpected("input data size mismatch");
+    if ((srcA.size() != srcB.size()) || (srcA.size() != dst.size())) {
+        return std::unexpected{"input data size mismatch"};
     }
 
     // special case
-    if (a.size() == 0) {
+    if (srcA.size() == 0) {
         return {};
     }
 
-    auto const sizeBytes{a.size_bytes()};
+    auto const sizeBytes{srcA.size_bytes()};
 
-    // create buffers
-    DeviceData deviceData{};
+    // create single buffer
+    // since all sizes (for `srcA, `srcB` and `dst`) must match, use the 3xsize for the buffer
+    // use ofsets to point to different memory inside the buffer
+    // TRY_EXPECTED(auto inOutBuffer, gpu::DeviceBuffer::create(sizeBytes * 3));
+    TRY_EXPECTED(auto inOutBuffer, gpu::Buffer::create(sizeBytes * 3, gpu::Buffer::Type::Device));
 
-    TRY_EXPECTED_VOID(deviceData.a.init(sizeBytes));
-    TRY_EXPECTED_VOID(deviceData.b.init(sizeBytes));
-    TRY_EXPECTED_VOID(deviceData.c.init(sizeBytes));
+    // RAII cleanup
+    auto const guard{::utils::make_scope_guard([&] { inOutBuffer.destroy(); })};
 
     // copy data
     {
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(deviceData.a,  //
-                                                       ::utils::to_byte_span(a)));
-
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(deviceData.b,  //
-                                                       ::utils::to_byte_span(b)));
+        TRY_EXPECTED_VOID(inOutBuffer.copyToBuffer(std::as_bytes(srcA), 0));
+        TRY_EXPECTED_VOID(inOutBuffer.copyToBuffer(std::as_bytes(srcB), sizeBytes));
     }
 
+    TRY_EXPECTED(auto const spanSrcA, gpu::BufferSpan::create(inOutBuffer, 0, sizeBytes));
+    TRY_EXPECTED(auto const spanSrcB, gpu::BufferSpan::create(inOutBuffer, sizeBytes, sizeBytes));
+    TRY_EXPECTED(auto const spanDst, gpu::BufferSpan::create(inOutBuffer, 2 * sizeBytes, sizeBytes));
+
     // run compute
-    TRY_EXPECTED_VOID((*this)(deviceData.a, deviceData.b, deviceData.c, sizeBytes));
+    {
+        auto const& add{*this};
+        TRY_EXPECTED_VOID(add(spanSrcA,  //
+                              spanSrcB,  //
+                              spanDst));
+    }
 
     // readback
-    TRY_EXPECTED_VOID(read(c, deviceData.c, sizeBytes));
+    {
+        TRY_EXPECTED_VOID(read(dst, spanDst));
+    }
 
     return {};
 }
 
-// TODO: add span for device buffers
-auto Add::operator()(gpu::DeviceBuffer const& a,  //
-                     gpu::DeviceBuffer const& b,  //
-                     gpu::DeviceBuffer const& c,  //
-                     size_t sizeBytes  //
+auto Add::operator()(gpu::BufferSpan const& srcA,  //
+                     gpu::BufferSpan const& srcB,  //
+                     gpu::BufferSpan const& dst  //
 ) const noexcept -> std::expected<void, std::string> {
-    TRY_EXPECTED_REF(auto& gpuManager, gpu::GpuManager::get());
+    using T = float;
 
     // input validation
     {
-        if (sizeBytes == 0) {
+        // check if all sizes equal
+        if ((srcA.size() != srcB.size()) || (srcA.size() != dst.size())) {
+            return std::unexpected{"input data size mismatch"};
+        }
+
+        // special case
+        if (srcA.size() == 0) {
             return {};
         }
 
-        if ((a.size() < sizeBytes) || (b.size() < sizeBytes) || (c.size() < sizeBytes)) {
-            return std::unexpected("input buffers are too small");
+        // check if ranges overlap
+        auto const rangeOverlaps{[&](gpu::BufferSpan const& src) {
+            if (src.buffer().buffer() != dst.buffer().buffer()) {
+                return false;
+            }
+
+            if (src.offset() <= dst.offset()) {
+                return (dst.offset() - src.offset()) < src.size();
+            }
+
+            return src.offset() - dst.offset() < dst.size();
+        }};
+
+        if (rangeOverlaps(srcA) || rangeOverlaps(srcB)) {
+            return std::unexpected{"destination memory overlaps with source memory"};
         }
 
-        if ((sizeBytes % sizeof(float)) != 0) {
-            return std::unexpected(fmt::format("input size should be multiple of {}", sizeof(float)));
+        if ((srcA.size() % sizeof(T)) != 0) {
+            return std::unexpected{fmt::format("input size should be multiple of {}", sizeof(T))};
         }
     }
 
-    auto const nn{sizeBytes / sizeof(float)};
+    TRY_EXPECTED_REF(auto& gpuManager, gpu::GpuManager::get());
 
+    size_t const sizeBytes{srcA.size()};
+
+    // number of elements as `size_t`. Since a workgroup size and workgroup count have `uint32_t` type, it's
+    // possible that the amount of work is bigger than a GPU can handle when calculating one addition per frame.
+    //
+    // the possible solutions are:
+    //     - automatically split input and dispatch multiple times
+    //     - make one thread to calculate more than a single add
+    auto const nn{sizeBytes / sizeof(T)};
+
+    // for now return an error in case the input is too big
     if (nn > std::numeric_limits<uint32_t>::max()) {
-        // TODO: maybe split the workload on multiple parts?
-        return std::unexpected(fmt::format("input size is to big, try to reduce it"));
+        return std::unexpected{fmt::format("input size is to big, try to split it")};
     }
 
     auto const n{static_cast<uint32_t>(nn)};
 
+    // TODO: it's possible that the required number of workgroups is bigger than GPU is capable of; in this
+    // case, use multiple dispatches
     auto const groupCountX{utils::get_workgroupgroup_count(n, m_workgroupSizeX)};
     uint32_t constexpr GROUP_COUNT_Y{1};
     uint32_t constexpr GROUP_COUNT_Z{1};
 
-    // check that the requested number of workgroups does not exceed the allowed maximum
+    // for now return an error in case the required workroup count is too big
     {
         auto const& limits{gpuManager.physicalDeviceProperties().properties.limits};
 
@@ -183,19 +206,25 @@ auto Add::operator()(gpu::DeviceBuffer const& a,  //
         // update descriptors
         {
             VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = a.buffer();
-            bufferInfo.offset = 0;
             bufferInfo.range = sizeBytes;
+
+            // srcA
+            bufferInfo.buffer = srcA.buffer().buffer();
+            bufferInfo.offset = srcA.offset();
 
             TRY_EXPECTED(uint32_t const descriptorIndexA,
                          gpuManager.storageDescriptorSetManager().push(commandBuffer, bufferInfo));
 
-            bufferInfo.buffer = b.buffer();
+            // srcB
+            bufferInfo.buffer = srcB.buffer().buffer();
+            bufferInfo.offset = srcB.offset();
 
             TRY_EXPECTED(uint32_t const descriptorIndexB,
                          gpuManager.storageDescriptorSetManager().push(commandBuffer, bufferInfo));
 
-            bufferInfo.buffer = c.buffer();
+            // dst
+            bufferInfo.buffer = dst.buffer().buffer();
+            bufferInfo.offset = dst.offset();
 
             TRY_EXPECTED(uint32_t const descriptorIndexOut,
                          gpuManager.storageDescriptorSetManager().push(commandBuffer, bufferInfo));
@@ -233,40 +262,57 @@ auto Add::operator()(gpu::DeviceBuffer const& a,  //
     return {};
 }
 
-auto Add::read(std::span<float> cHost,  //
-               gpu::DeviceBuffer const& cDevice,  //
-               size_t sizeBytes,  //
-               std::optional<gpu::HostVisibleBuffer> stagingBuffer  //
+auto Add::read(std::span<float> dst,  //
+               gpu::BufferSpan const& src,  //
+               std::optional<gpu::Buffer> stagingBuffer  //
 ) const noexcept -> std::expected<void, std::string> {
-    gpu::HostVisibleBuffer stagingBufferTmp{};
+    using T = float;
 
-    // RAII cleanup, will do nothing if the temporary buffer was not initialized
+    size_t const sizeBytes{src.size()};
+
+    // TODO: it is possible that the device `src` buffer is too big and there's no more GPU memory left to
+    // allocate a staging buffer of the same size; in this case try to allocate a smaller staging buffer and use
+    // it multiple times to copy parts of data. For now let's hope the data is not big enough.
+
+    gpu::Buffer stagingBufferTmp{};
+
+    // RAII cleanup, will do nothing if the `stagingBufferTmp` was not initialized (when `stagingBuffer` was
+    // provided as parameter)
     auto const guard{::utils::make_scope_guard([&] { stagingBufferTmp.destroy(); })};
 
-    gpu::HostVisibleBuffer readbackBuffer{};
+    // holds pointer to either stagingBuffer or stagingBufferTmp
+    gpu::Buffer* readbackBuffer{nullptr};
 
+    // if `stagingBuffer` was provided - use it. If not - use the temporary `stagingBufferTmp`. This condition
+    // is necessary to make the `guard` RAII wrapper work.
     if (stagingBuffer) {
-        readbackBuffer = *stagingBuffer;
+        if (stagingBuffer->type() != gpu::Buffer::Type::Readback) {
+            return std::unexpected{"wrong staging buffer type"};
+        }
+
+        readbackBuffer = &stagingBuffer.value();
     } else {
-        TRY_EXPECTED_VOID(stagingBufferTmp.init(sizeBytes, true));
+        TRY_EXPECTED(auto result, gpu::Buffer::create(sizeBytes, gpu::Buffer::Type::Readback));
+        stagingBufferTmp = std::move(result);
 
-        readbackBuffer = stagingBufferTmp;
+        readbackBuffer = &stagingBufferTmp;
     }
 
-    if (cHost.size_bytes() < sizeBytes) {
-        return std::unexpected(fmt::format("result host buffer should have space for at least {} bytes", sizeBytes));
+    if (dst.size_bytes() < sizeBytes) {
+        return std::unexpected{"destination buffer is too small"};
     }
 
-    if (readbackBuffer.size() < sizeBytes) {
-        return std::unexpected(fmt::format("staging buffer should have space for at least {} bytes", sizeBytes));
+    if (readbackBuffer->size() < sizeBytes) {
+        return std::unexpected{"staging buffer is too small"};
     }
 
-    if ((sizeBytes % sizeof(float)) != 0) {
-        return std::unexpected(fmt::format("the size of data to read should be multiple of {}", sizeof(float)));
+    if ((sizeBytes % sizeof(T)) != 0) {
+        return std::unexpected{fmt::format("the size of data to read should be multiple of {}", sizeof(T))};
     }
 
-    TRY_EXPECTED_VOID(gpu::utils::read_data_sync(cDevice, readbackBuffer, sizeBytes));
-    TRY_EXPECTED_VOID(readbackBuffer.copyFrom(cHost.data(), sizeBytes));
+    TRY_EXPECTED_VOID(readbackBuffer->copyToBuffer(src, 0));
+
+    TRY_EXPECTED_VOID(readbackBuffer->copyFromBuffer(dst));
 
     return {};
 }

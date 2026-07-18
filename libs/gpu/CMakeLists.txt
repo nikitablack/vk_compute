@@ -27,10 +27,12 @@ target_sources(gpu
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/utils/read_helper.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/utils/submit.hpp
 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/Buffer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/CommandManager.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/DeviceBuffer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/GpuManager.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/HostVisibleBuffer.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/Span.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/StorageDescriptorSetManager.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/VulkanDebugUtils.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gpu/VulkanFunctions.hpp
@@ -87,10 +89,12 @@ target_sources(gpu
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/utils/read_helper.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/utils/submit.cpp
 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/Buffer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/CommandManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/DeviceBuffer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/GpuManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/HostVisibleBuffer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/Span.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/StorageDescriptorSetManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/VulkanFunctions.cpp
 )
@@ -100,11 +104,11 @@ target_include_directories(gpu PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 target_link_libraries(gpu
     PUBLIC
+        libs::utils
         Vulkan::Vulkan
         GPUOpen::VulkanMemoryAllocator
     PRIVATE
         fmt::fmt
-        libs::utils
         libs::warnings_as_errors
         spdlog::spdlog
 )

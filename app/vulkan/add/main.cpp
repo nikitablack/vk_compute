@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <expected>
-#include <gpu/DeviceBuffer.hpp>
+#include <gpu/Buffer.hpp>
 #include <gpu/GpuManager.hpp>
 #include <gpu/HostVisibleBuffer.hpp>
 #include <gpu/utils/init_helper.hpp>
@@ -12,7 +12,6 @@
 #include <ranges>
 #include <string>
 #include <utils/benchmark_with_percentiles.hpp>
-#include <utils/to_span.hpp>
 #include <utils/try_expected.hpp>
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
@@ -26,7 +25,8 @@
 namespace {
 
 auto main_impl() -> std::expected<void, std::string> {
-    uint32_t constexpr N{1024 * 1024 * 100};
+    // uint32_t constexpr N{1024 * 1024 * 100};
+    uint32_t constexpr N{5};
     uint32_t constexpr S{N * sizeof(float)};
 
     // initialize host memory
@@ -58,28 +58,16 @@ auto main_impl() -> std::expected<void, std::string> {
 #endif
 
     // initialize device memory
-    gpu::DeviceBuffer aDevice{};
-    gpu::DeviceBuffer bDevice{};
-    gpu::DeviceBuffer cDevice{};
+    TRY_EXPECTED(auto aDevice, gpu::Buffer::create(std::span<float const>{aHost}, gpu::Buffer::Type::Device));
+    TRY_EXPECTED(auto bDevice, gpu::Buffer::create(std::span<float const>{bHost}, gpu::Buffer::Type::Device));
+    TRY_EXPECTED(auto cDevice, gpu::Buffer::create(S, gpu::Buffer::Type::Device));
 
-    TRY_EXPECTED_VOID(aDevice.init(S));
-    TRY_EXPECTED_VOID(bDevice.init(S));
-    TRY_EXPECTED_VOID(cDevice.init(S));
-
-    // copy host data to device
-    {
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(aDevice,  //
-                                                       ::utils::to_byte_span(aHost)));
-
-        TRY_EXPECTED_VOID(gpu::utils::init_buffer_sync(bDevice,  //
-                                                       ::utils::to_byte_span(bHost)));
-    }
-
+    // create kernel
     TRY_EXPECTED(auto add, kernel::Add::create(32));
 
-    // compute
+    // compute and run benchmarks
     TRY_EXPECTED(auto const percentiles, utils::benchmark_with_percentiles([&]() -> std::expected<void, std::string> {
-                     TRY_EXPECTED_VOID(add(aDevice, bDevice, cDevice, S));
+                     TRY_EXPECTED_VOID(add(aDevice, bDevice, cDevice));
                      return {};
                  }));
 
@@ -89,7 +77,7 @@ auto main_impl() -> std::expected<void, std::string> {
 
     // read result
     std::vector<float> cHost(N);
-    TRY_EXPECTED_VOID(add.read(cHost, cDevice, S));
+    TRY_EXPECTED_VOID(add.read(cHost, cDevice));
 
 #ifdef VK_ENABLE_RENDERDOC_DEBUG
     if (renderdocApi) {

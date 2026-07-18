@@ -123,16 +123,16 @@ auto MinMaxV1::operator()(gpu::DeviceBuffer const& a,  //
     // input validation
     {
         if (sizeBytes == 0) {
-            return std::unexpected("input buffer should have at least one element");
+            return std::unexpected{"input buffer should have at least one element"};
         }
 
         if ((sizeBytes % sizeof(float)) != 0) {
-            return std::unexpected(fmt::format("input size should be multiple of {}", sizeof(float)));
+            return std::unexpected{fmt::format("input size should be multiple of {}", sizeof(float))};
         }
 
         if (b.size() < (2 * sizeof(float))) {
-            return std::unexpected(
-                fmt::format("result buffer should have space for at least {} bytes", 2 * sizeof(float)));
+            return std::unexpected{
+                fmt::format("result buffer should have space for at least {} bytes", 2 * sizeof(float))};
         }
     }
 
@@ -247,28 +247,28 @@ auto MinMaxV1::read(gpu::DeviceBuffer const& bDevice,  //
     // RAII cleanup, will do nothing if the temporary buffer was not initialized
     auto const guard{::utils::make_scope_guard([&] { stagingBufferTmp.destroy(); })};
 
-    gpu::HostVisibleBuffer readbackBuffer{};
+    gpu::HostVisibleBuffer* readbackBuffer{};
 
     if (stagingBuffer) {
-        readbackBuffer = *stagingBuffer;
+        readbackBuffer = &stagingBuffer.value();
     } else {
         TRY_EXPECTED_VOID(stagingBufferTmp.init(SIZE_BYTES, true));
 
-        readbackBuffer = stagingBufferTmp;
+        readbackBuffer = &stagingBufferTmp;
     }
 
     if (bDevice.size() < SIZE_BYTES) {
-        return std::unexpected(fmt::format("result buffer should have space for at least {} bytes", SIZE_BYTES));
+        return std::unexpected{fmt::format("result buffer should have space for at least {} bytes", SIZE_BYTES)};
     }
 
-    if (readbackBuffer.size() < SIZE_BYTES) {
-        return std::unexpected(fmt::format("staging buffer should have space for at least {} bytes", SIZE_BYTES));
+    if (readbackBuffer->size() < SIZE_BYTES) {
+        return std::unexpected{fmt::format("staging buffer should have space for at least {} bytes", SIZE_BYTES)};
     }
 
-    TRY_EXPECTED_VOID(gpu::utils::read_data_sync(bDevice, readbackBuffer, SIZE_BYTES));
+    TRY_EXPECTED_VOID(gpu::utils::read_data_sync(bDevice, *readbackBuffer, SIZE_BYTES));
 
     std::array<uint8_t, SIZE_BYTES> data{};
-    TRY_EXPECTED_VOID(readbackBuffer.copyFrom(data.data(), SIZE_BYTES));
+    TRY_EXPECTED_VOID(readbackBuffer->copyFrom(std::as_writable_bytes(std::span{data}), SIZE_BYTES));
 
     uint32_t minUint{};
     std::memcpy(&minUint, data.data(), sizeof(float));
